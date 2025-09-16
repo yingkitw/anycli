@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::time::Duration;
 use tokio::time::timeout;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct WatsonxAI {
@@ -52,6 +53,33 @@ struct GenerationResults {
 #[derive(Deserialize)]
 struct GenerationData {
     results: Vec<GenerationResults>,
+}
+
+#[derive(Debug, Clone)]
+pub struct GenerationAttempt {
+    pub prompt: String,
+    pub result: String,
+    pub quality_score: f32,
+    pub attempt_number: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct RetryConfig {
+    pub max_attempts: u32,
+    pub base_timeout: Duration,
+    pub enable_progressive_prompts: bool,
+    pub quality_threshold: f32,
+}
+
+impl Default for RetryConfig {
+    fn default() -> Self {
+        Self {
+            max_attempts: 3,
+            base_timeout: Duration::from_secs(30),
+            enable_progressive_prompts: true,
+            quality_threshold: 0.7,
+        }
+    }
 }
 
 // Model constants
@@ -118,6 +146,65 @@ impl WatsonxAI {
             .await
     }
 
+    /// Generate with retry mechanism and feedback integration
+    pub async fn watsonx_gen_with_feedback(
+        &self,
+        base_prompt: &str,
+        model_id: &str,
+        max_output: u32,
+        previous_failures: &[String],
+        retry_config: Option<RetryConfig>,
+    ) -> Result<GenerationAttempt> {
+        let config = retry_config.unwrap_or_default();
+        let mut best_attempt: Option<GenerationAttempt> = None;
+        
+        for attempt in 1..=config.max_attempts {
+            let enhanced_prompt = self.enhance_prompt_with_feedback(
+                base_prompt, 
+                previous_failures, 
+                attempt
+            );
+            
+            let timeout_duration = config.base_timeout + Duration::from_secs((attempt - 1) as u64 * 10);
+            
+            match self.watsonx_gen_with_timeout(
+                &enhanced_prompt,
+                model_id,
+                max_output,
+                timeout_duration,
+            ).await {
+                Ok(result) => {
+                    let quality_score = self.assess_generation_quality(&result, base_prompt);
+                    
+                    let current_attempt = GenerationAttempt {
+                        prompt: enhanced_prompt,
+                        result: result.clone(),
+                        quality_score,
+                        attempt_number: attempt,
+                    };
+                    
+                    // If quality is good enough, return immediately
+                    if quality_score >= config.quality_threshold {
+                        return Ok(current_attempt);
+                    }
+                    
+                    // Keep track of best attempt so far
+                    if best_attempt.as_ref().map_or(true, |best| quality_score > best.quality_score) {
+                        best_attempt = Some(current_attempt);
+                    }
+                }
+                Err(e) => {
+                    if attempt == config.max_attempts {
+                        return Err(e);
+                    }
+                    // Continue to next attempt on error
+                }
+            }
+        }
+        
+        best_attempt.ok_or_else(|| anyhow::anyhow!("All generation attempts failed"))
+    }
+
     pub async fn watsonx_gen_with_timeout(
         &self,
         prompt: &str,
@@ -148,11 +235,11 @@ impl WatsonxAI {
         let params = GenerationParams {
             decoding_method: "greedy".to_string(),
             max_new_tokens: max_output,
-            min_new_tokens: 1,
+            min_new_tokens: 5, // Ensure we get at least some meaningful output
             top_k: 50,
             top_p: 1.0,
             repetition_penalty: 1.1,
-            stop_sequences: vec!["\n\n".to_string(), "Human:".to_string(), "Assistant:".to_string()],
+            stop_sequences: vec!["Human:".to_string(), "Assistant:".to_string(), "Query:".to_string()],
         };
 
         let request_body = GenerationRequest {
@@ -188,8 +275,9 @@ impl WatsonxAI {
         let mut answer = String::new();
         let response_text = response.text().await?;
         
-        // Improved response parsing with better error handling
+        // Improved response parsing for Server-Sent Events (SSE) format
         for line in response_text.lines() {
+            // Handle SSE format: look for lines starting with "data: "
             if line.starts_with("data: ") {
                 let json_data = &line[6..]; // Remove "data: " prefix
                 
@@ -201,7 +289,11 @@ impl WatsonxAI {
                 match serde_json::from_str::<GenerationData>(json_data) {
                     Ok(data) => {
                         if let Some(result) = data.results.first() {
-                            answer.push_str(&result.generated_text);
+                            let generated_text = &result.generated_text;
+                            // Only add non-empty text that's not just whitespace
+                            if !generated_text.trim().is_empty() {
+                                answer.push_str(generated_text);
+                            }
                         }
                     }
                     Err(e) => {
@@ -214,10 +306,121 @@ impl WatsonxAI {
         
         // Ensure we have some response
         if answer.trim().is_empty() {
-            return Err(anyhow::anyhow!("Empty response from WatsonX API"));
+            return Err(anyhow::anyhow!("Empty response from WatsonX API. Raw response: {}", response_text));
         }
         
-        Ok(answer.trim().to_string())
+        // Clean up the response by extracting just the command part
+        let mut cleaned_answer = answer.trim().to_string();
+        
+        // Remove any prefixes like "Answer:" or similar
+        if cleaned_answer.starts_with("Answer:") {
+            cleaned_answer = cleaned_answer.strip_prefix("Answer:").unwrap_or(&cleaned_answer).trim().to_string();
+        }
+        
+        // Remove any suffixes like "Query:" or similar that might appear due to stop sequence issues
+        if let Some(query_pos) = cleaned_answer.find("Query:") {
+            cleaned_answer = cleaned_answer[..query_pos].trim().to_string();
+        }
+        
+        // Take only the first line to ensure we get just the command
+        let final_answer = cleaned_answer
+            .lines()
+            .next()
+            .unwrap_or(&cleaned_answer)
+            .trim()
+            .to_string();
+
+        Ok(final_answer)
+    }
+
+    /// Enhance prompt with feedback from previous failures
+    fn enhance_prompt_with_feedback(
+        &self,
+        base_prompt: &str,
+        previous_failures: &[String],
+        attempt_number: u32,
+    ) -> String {
+        if previous_failures.is_empty() {
+            return base_prompt.to_string();
+        }
+
+        let mut enhanced_prompt = base_prompt.to_string();
+        
+        // Add failure context
+        enhanced_prompt.push_str("\n\nPREVIOUS ATTEMPTS FAILED WITH THESE ERRORS:\n");
+        for (i, failure) in previous_failures.iter().enumerate() {
+            enhanced_prompt.push_str(&format!("{}. {}\n", i + 1, failure));
+        }
+        
+        // Add progressive guidance based on attempt number
+        match attempt_number {
+            1 => {
+                enhanced_prompt.push_str("\nPlease generate a more specific and accurate IBM Cloud CLI command.");
+            }
+            2 => {
+                enhanced_prompt.push_str("\nIMPORTANT: The previous command failed. Please:\n");
+                enhanced_prompt.push_str("- Check command syntax carefully\n");
+                enhanced_prompt.push_str("- Verify subcommand names\n");
+                enhanced_prompt.push_str("- Ensure proper parameter format\n");
+                enhanced_prompt.push_str("- Consider if plugins are required\n");
+            }
+            _ => {
+                enhanced_prompt.push_str("\nCRITICAL: Multiple attempts failed. Please:\n");
+                enhanced_prompt.push_str("- Use only well-established IBM Cloud CLI commands\n");
+                enhanced_prompt.push_str("- Avoid deprecated or experimental features\n");
+                enhanced_prompt.push_str("- Consider alternative approaches\n");
+                enhanced_prompt.push_str("- Focus on core IBM Cloud services\n");
+            }
+        }
+        
+        enhanced_prompt
+    }
+
+    /// Assess the quality of generated command
+    fn assess_generation_quality(&self, result: &str, _original_prompt: &str) -> f32 {
+        let mut score = 0.0;
+        let mut max_score = 0.0;
+        
+        // Check if result starts with ibmcloud
+        max_score += 0.3;
+        if result.trim().starts_with("ibmcloud") {
+            score += 0.3;
+        }
+        
+        // Check if result is not empty and reasonable length
+        max_score += 0.2;
+        let trimmed = result.trim();
+        if !trimmed.is_empty() && trimmed.len() > 8 && trimmed.len() < 200 {
+            score += 0.2;
+        }
+        
+        // Check for common IBM Cloud CLI patterns
+        max_score += 0.2;
+        let common_patterns = ["resource", "service", "target", "login", "plugin", "cf", "ks", "cr"];
+        if common_patterns.iter().any(|pattern| result.contains(pattern)) {
+            score += 0.2;
+        }
+        
+        // Check if it doesn't contain obvious errors
+        max_score += 0.15;
+        let error_indicators = ["error", "failed", "invalid", "unknown", "not found"];
+        if !error_indicators.iter().any(|indicator| result.to_lowercase().contains(indicator)) {
+            score += 0.15;
+        }
+        
+        // Check for proper command structure (no multiple commands)
+        max_score += 0.15;
+        let line_count = result.lines().filter(|line| !line.trim().is_empty()).count();
+        if line_count == 1 {
+            score += 0.15;
+        }
+        
+        // Normalize score
+        if max_score > 0.0 {
+            score / max_score
+        } else {
+            0.0
+        }
     }
 }
 

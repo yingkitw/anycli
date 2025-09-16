@@ -16,6 +16,8 @@ An AI-powered assistant for the IBM Cloud CLI that translates natural language q
 - **🔌 Smart Plugin Error Handling**: Detects missing plugin errors and provides specific guidance for installation and alternatives
 - **📚 Local RAG Engine**: Enhanced knowledge base with IBM Cloud CLI documentation for better command suggestions
 - **💡 Interactive Error Recovery**: Intelligent error pattern recognition with contextual suggestions and learning capabilities
+- **🔧 Robust WatsonX Integration**: Improved API response handling with enhanced prompt engineering and error recovery
+- **⚡ Pipeline Input Support**: Seamlessly handles both interactive and pipeline input modes for automation workflows
 
 ## Installation
 
@@ -97,6 +99,32 @@ ibmcloud-ai> list my databases
 Enter the correct command (or press Enter to skip): ibmcloud resource service-instances --service-name databases-for-postgresql
 
 ✅ Thanks! I've learned that 'list my databases' should be 'ibmcloud resource service-instances --service-name databases-for-postgresql'
+```
+
+## 🔧 Recent Technical Improvements
+
+### WatsonX API Integration Enhancements
+Recent updates have significantly improved the reliability and accuracy of the WatsonX AI integration:
+
+- **Enhanced Response Parsing**: Improved handling of Server-Sent Events (SSE) format responses from WatsonX API
+- **Optimized Generation Parameters**: Adjusted `min_new_tokens` and refined stop sequences for better command generation
+- **Robust Error Handling**: Better detection and recovery from API response issues
+- **Improved Prompt Engineering**: Enhanced prompt structure with explicit query inclusion for more accurate translations
+- **Pipeline Input Support**: Fixed infinite loop issues when processing piped input, enabling automation workflows
+
+### Quality Improvements
+- **Response Cleaning**: Automatic removal of unwanted prefixes ("Answer:") and suffixes ("Query:") from generated commands
+- **First-Line Extraction**: Ensures only the actual command is returned, filtering out extraneous text
+- **Empty Response Prevention**: Enhanced validation to prevent empty or malformed command generation
+
+### Usage Examples with Pipeline Input
+```bash
+# Pipeline input for automation
+echo "list all resource groups" | icx
+echo "show me all wml instances" | icx
+
+# Interactive mode
+icx
 ```
 
 ## IBM Cloud CLI References

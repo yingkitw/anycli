@@ -289,7 +289,7 @@
         <div class="hero">
             <div class="hero-content">
                 <h1>IBM Cloud CLI AI (icx)</h1>
-                <p>An intelligent AI-powered assistant with learning capabilities that translates natural language into IBM Cloud commands and continuously improves through user interactions</p>
+                <p>An intelligent AI-powered assistant with enhanced WatsonX integration, learning capabilities, and pipeline support that translates natural language into IBM Cloud commands with improved accuracy and reliability</p>
                 <div class="hero-buttons">
                     <a href="#installation" class="btn">Get Started</a>
                     <a href="https://github.ibm.com/watsonx-apac/ibmcloud-cli-ai" class="btn btn-secondary">View on GitHub</a>
@@ -344,6 +344,16 @@
                     <div class="feature-icon">📚</div>
                     <h3>Local RAG Engine</h3>
                     <p>Enhanced knowledge base with IBM Cloud CLI documentation for better command suggestions and contextual help.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Robust WatsonX Integration</h3>
+                    <p>Improved API response handling with enhanced prompt engineering, optimized generation parameters, and robust error recovery mechanisms.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Pipeline Input Support</h3>
+                    <p>Seamlessly handles both interactive and pipeline input modes, enabling automation workflows and scripting integration.</p>
                 </div>
             </div>
 
@@ -487,6 +497,35 @@ Command: ibmcloud is vpc-create my-vpc --zone us-south-1</code></pre>
 Enter the correct command: ibmcloud resource service-instances --service-name databases-for-postgresql
 
 ✅ Thanks! I've learned this correction for future requests.</code></pre>
+            </div>
+            
+            <div class="card">
+                <h2>🔧 Recent Technical Improvements</h2>
+                
+                <h3>WatsonX API Integration Enhancements</h3>
+                <p>Recent updates have significantly improved the reliability and accuracy of the WatsonX AI integration:</p>
+                <ul>
+                    <li><strong>Enhanced Response Parsing:</strong> Improved handling of Server-Sent Events (SSE) format responses from WatsonX API</li>
+                    <li><strong>Optimized Generation Parameters:</strong> Adjusted <code>min_new_tokens</code> and refined stop sequences for better command generation</li>
+                    <li><strong>Robust Error Handling:</strong> Better detection and recovery from API response issues</li>
+                    <li><strong>Improved Prompt Engineering:</strong> Enhanced prompt structure with explicit query inclusion for more accurate translations</li>
+                    <li><strong>Pipeline Input Support:</strong> Fixed infinite loop issues when processing piped input, enabling automation workflows</li>
+                </ul>
+                
+                <h3>Quality Improvements</h3>
+                <ul>
+                    <li><strong>Response Cleaning:</strong> Automatic removal of unwanted prefixes ("Answer:") and suffixes ("Query:") from generated commands</li>
+                    <li><strong>First-Line Extraction:</strong> Ensures only the actual command is returned, filtering out extraneous text</li>
+                    <li><strong>Empty Response Prevention:</strong> Enhanced validation to prevent empty or malformed command generation</li>
+                </ul>
+                
+                <h3>Usage Examples with Pipeline Input</h3>
+                <pre><code># Pipeline input for automation
+echo "list all resource groups" | icx
+echo "show me all wml instances" | icx
+
+# Interactive mode
+icx</code></pre>
             </div>
         </div>
 

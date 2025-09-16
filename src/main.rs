@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use colored::*;
 use std::process::Command;
-use std::io::{self, Write};
+use std::io::{self, Write, IsTerminal};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
     terminal::{disable_raw_mode, enable_raw_mode, size},
@@ -17,9 +17,11 @@ mod local_vector_store;
 mod local_document_indexer;
 mod local_rag;
 mod command_learning;
+mod quality_analyzer;
 
-use watsonx::WatsonxAI;
+use watsonx::{WatsonxAI, RetryConfig};
 use local_rag::LocalRAGEngine;
+use translator::CommandTranslator;
 
 /// Display startup banner with Carbon Design System inspired styling
 fn display_banner() {
@@ -77,6 +79,18 @@ fn display_banner() {
 
 /// Handle input with command history navigation
 async fn handle_input_with_history(history: &mut Vec<String>) -> Result<String> {
+    // Check if stdin is a terminal (interactive) or piped
+    if !io::stdin().is_terminal() {
+        // Handle piped input - read from stdin directly
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim().to_string();
+        if !input.is_empty() {
+            history.push(input.clone());
+        }
+        return Ok(input);
+    }
+    
     enable_raw_mode()?;
     let mut input = String::new();
     let mut history_index: Option<usize> = None;
@@ -226,6 +240,23 @@ async fn handle_edit_input(original_command: &str) -> Result<Option<String>> {
 }
 
 /// Execute a command with proper login checks and output handling
+async fn execute_command_with_feedback(
+    command: &str, 
+    rag_engine: &LocalRAGEngine, 
+    user_input: &str,
+    translator: &mut CommandTranslator
+) -> Result<bool> {
+    let success = execute_command(command, rag_engine, user_input).await?;
+    
+    // If command failed, add feedback for future improvements
+    if !success {
+        let error_msg = format!("Command '{}' failed execution", command);
+        translator.add_execution_feedback(command, &error_msg, user_input);
+    }
+    
+    Ok(success)
+}
+
 async fn execute_command(command: &str, rag_engine: &LocalRAGEngine, user_input: &str) -> Result<bool> {
     // Check login status before executing IBM Cloud commands
     if command.starts_with("ibmcloud") && !command.contains("login") {
@@ -464,7 +495,19 @@ async fn main() -> Result<()> {
     }
     
     // Create local RAG engine with file-based storage
-    let rag_engine = LocalRAGEngine::new(watsonx, "./rag_data.json").await?;
+    let rag_engine = LocalRAGEngine::new(watsonx.clone(), "./rag_data.json").await?;
+    
+    // Create command translator with feedback capabilities
+    let mut translator = CommandTranslator::new(watsonx);
+    
+    // Configure retry settings for better results
+    let retry_config = RetryConfig {
+        max_attempts: 3,
+        base_timeout: std::time::Duration::from_secs(30),
+        enable_progressive_prompts: true,
+        quality_threshold: 0.7,
+    };
+    translator.set_retry_config(retry_config);
     
     // Initialize command history with Carbon-inspired UX
     let mut command_history: Vec<String> = Vec::new();
@@ -472,17 +515,26 @@ async fn main() -> Result<()> {
     println!("{} {}", "🚀".green(), "Ready! Start typing your IBM Cloud queries...".green());
     println!();
     
+    // Check if we're in piped mode
+    let is_piped = !io::stdin().is_terminal();
+    
     // Enhanced chat loop with better error handling and user experience
     loop {
         let input = match handle_input_with_history(&mut command_history).await {
             Ok(input) => input,
             Err(e) => {
                 println!("{} {}: {}", "❌".red(), "Input error".red(), e);
+                if is_piped {
+                    break; // Exit on error in piped mode
+                }
                 continue;
             }
         };
         
         if input.is_empty() {
+            if is_piped {
+                break; // Exit on empty input in piped mode
+            }
             continue;
         }
         
@@ -493,7 +545,7 @@ async fn main() -> Result<()> {
         
         if input.starts_with("exec ") {
             let command = input.trim_start_matches("exec ").trim();
-            match execute_command(command, &rag_engine, &input).await {
+            match execute_command_with_feedback(command, &rag_engine, &input, &mut translator).await {
                 Ok(_) => {},
                 Err(e) => {
                     println!("{} {}: {}", "❌".red(), "Execution error".red(), e);
@@ -502,20 +554,54 @@ async fn main() -> Result<()> {
             continue;
         }
         
-        // Enhanced translation with better user feedback
-        println!("{} {}", "🤔".cyan(), "Processing with watsonx.ai...".cyan());
+        if input == "clear" {
+            translator.clear_failure_history();
+            println!("{} {}", "🧹".green(), "Cleared failure history for fresh start".green());
+            continue;
+        }
         
-        match rag_engine.generate_with_context(&input).await {
+        // Enhanced translation with intelligent retry and feedback
+        println!("{} {}", "🤔".cyan(), "Processing with watsonx.ai (with feedback learning)...".cyan());
+        
+        match translator.translate_with_feedback(&input).await {
             Ok(command) => {
+                // Analyze command quality and provide feedback
+                let quality_analysis = translator.analyze_command_quality(&command.result, &input);
+                
                 // Carbon Design: Clear visual hierarchy and actionable information
                 println!();
-                println!("{} {}", "💡".green(), "Generated IBM Cloud CLI command:".green().bold());
+                let quality_indicator = if quality_analysis.metrics.overall_score >= 0.8 {
+                    "🎯".green()
+                } else if quality_analysis.metrics.overall_score >= 0.6 {
+                    "⚡".yellow()
+                } else {
+                    "⚠️".red()
+                };
+                
+                println!("{} {} (Quality: {:.1}%)", 
+                    quality_indicator, 
+                    "Generated IBM Cloud CLI command:".bold(),
+                    quality_analysis.metrics.overall_score * 100.0
+                );
+                
+                // Get success rate from learning engine
+                let success_rate = translator.get_command_success_rate(&command.result);
+                if success_rate < 0.7 {
+                    println!("{} Command success rate: {:.1}% (based on historical data)", "📊".cyan(), success_rate * 100.0);
+                    let retry_suggestions = translator.get_intelligent_retry_suggestions(&command.result, &input, 0);
+                    if !retry_suggestions.is_empty() {
+                        println!("{} Retry suggestions:", "💡".cyan());
+                        for suggestion in retry_suggestions.iter().take(3) {
+                            println!("   • {}", suggestion);
+                        }
+                    }
+                }
                 
                 // Responsive box sizing based on terminal width
                 let terminal_width = size().map(|(w, _)| w as usize).unwrap_or(80);
                 let max_box_width = terminal_width.saturating_sub(4);
                 let min_box_width = 50;
-                let preferred_width = std::cmp::max(command.len() + 4, min_box_width);
+                let preferred_width = std::cmp::max(command.result.len() + 4, min_box_width);
                 let box_width = std::cmp::min(preferred_width, max_box_width);
                 
                 let top_border = format!("┌{}┐", "─".repeat(box_width - 2));
@@ -523,13 +609,16 @@ async fn main() -> Result<()> {
                 
                 println!("{}", top_border);
                 
+                // Extract command string from GenerationAttempt
+                let command_str = &command.result;
+                
                 // Handle long commands with proper text wrapping
                 let content_width = box_width - 4;
-                if command.len() <= content_width {
-                    println!("│ {} │", format!("{:<width$}", command, width = content_width));
+                if command_str.len() <= content_width {
+                    println!("│ {} │", format!("{:<width$}", command_str, width = content_width));
                 } else {
                     // Split long commands into multiple lines
-                    let mut remaining = command.as_str();
+                    let mut remaining = command_str.as_str();
                     while !remaining.is_empty() {
                         let chunk_end = if remaining.len() <= content_width {
                             remaining.len()
@@ -548,28 +637,77 @@ async fn main() -> Result<()> {
                 
                 println!("{}", bottom_border);
                 
-                // Enhanced command editing with better UX
-                match handle_edit_input(&command).await {
-                    Ok(Some(final_command)) => {
-                        match execute_command(&final_command, &rag_engine, &input).await {
-                            Ok(_) => {},
-                            Err(e) => {
-                                println!("{} {}: {}", "❌".red(), "Execution failed".red(), e);
-                                println!("{} {}", "💡".cyan(), "You can try modifying the command or ask for help".cyan());
-                            }
+                // Show quality insights if score is below excellent
+                if quality_analysis.metrics.overall_score < 0.8 {
+                    println!();
+                    println!("{} {}", "📊".cyan(), "Quality Analysis:".cyan().bold());
+                    
+                    if !quality_analysis.improvement_areas.is_empty() {
+                        println!("{} Areas for improvement:", "🔍".yellow());
+                        for area in &quality_analysis.improvement_areas {
+                            println!("  • {}", area);
                         }
                     }
-                    Ok(None) => {
-                        println!("{} {}", "⏭️".yellow(), "Command execution cancelled".yellow());
+                    
+                    if !quality_analysis.recommended_actions.is_empty() && quality_analysis.recommended_actions.len() <= 3 {
+                        println!("{} Suggestions:", "💡".cyan());
+                        for action in quality_analysis.recommended_actions.iter().take(3) {
+                            println!("  • {}", action);
+                        }
                     }
-                    Err(e) => {
-                        println!("{} {}: {}", "❌".red(), "Edit error".red(), e);
+                }
+                
+                // Enhanced command editing with better UX
+                if is_piped {
+                    // In piped mode, execute the command directly without editing
+                    match execute_command_with_feedback(&command.result, &rag_engine, &input, &mut translator).await {
+                        Ok(success) => {
+                            if success {
+                                println!("{} {}", "✅".green(), "Command executed successfully!".green());
+                            } else {
+                                println!("{} {}", "⚠️".yellow(), "Command completed with warnings".yellow());
+                            }
+                        }
+                        Err(e) => {
+                            println!("{} {}: {}", "❌".red(), "Execution failed".red(), e);
+                            println!("{} {}", "💡".cyan(), "This failure has been recorded for learning. Try rephrasing or use 'clear' to reset.".cyan());
+                        }
+                    }
+                    break; // Exit after processing in piped mode
+                } else {
+                    match handle_edit_input(&command.result).await {
+                        Ok(Some(final_command)) => {
+                            match execute_command_with_feedback(&final_command, &rag_engine, &input, &mut translator).await {
+                                Ok(success) => {
+                                    if success {
+                                        println!("{} {}", "✅".green(), "Command executed successfully!".green());
+                                    } else {
+                                        println!("{} {}", "⚠️".yellow(), "Command completed with warnings".yellow());
+                                    }
+                                },
+                                Err(e) => {
+                                    println!("{} {}: {}", "❌".red(), "Execution failed".red(), e);
+                                    println!("{} {}", "💡".cyan(), "This failure has been recorded for learning. Try rephrasing or use 'clear' to reset.".cyan());
+                                }
+                            }
+                        }
+                        Ok(None) => {
+                            println!("{} {}", "⏭️".yellow(), "Command execution cancelled".yellow());
+                        }
+                        Err(e) => {
+                            println!("{} {}: {}", "❌".red(), "Edit error".red(), e);
+                        }
                     }
                 }
             }
             Err(e) => {
                 // Enhanced error handling with actionable guidance
                 println!("{} {}: {}", "❌".red(), "Translation failed".red(), e);
+                
+                if is_piped {
+                    break; // Exit on translation error in piped mode
+                }
+                
                 println!();
                 println!("{} {}", "💡".cyan(), "Suggestions:".cyan().bold());
                 println!("  • Try rephrasing your query more specifically");

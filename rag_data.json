@@ -5,8 +5,8 @@
       "content": "IBM Cloud CLI is a command-line interface that provides a set of commands for managing IBM Cloud resources. You can use it to create, configure, and manage IBM Cloud services from your terminal.",
       "source": "IBM Cloud CLI Overview",
       "metadata": {
-        "category": "basic_knowledge",
-        "type": "documentation"
+        "type": "documentation",
+        "category": "basic_knowledge"
       },
       "embedding": [
         0.0031294732,
@@ -795,8 +795,8 @@
       "content": "Common IBM Cloud CLI commands include: 'ibmcloud login' for authentication, 'ibmcloud target' to set your target organization and space, 'ibmcloud resource groups' to list resource groups, and 'ibmcloud cf apps' to list Cloud Foundry applications.",
       "source": "IBM Cloud CLI Commands",
       "metadata": {
-        "type": "documentation",
-        "category": "command_reference"
+        "category": "command_reference",
+        "type": "documentation"
       },
       "embedding": [
         0.0,
@@ -1190,8 +1190,8 @@
       "content": "IBM Cloud CLI plugins extend the functionality of the CLI. You can install plugins using 'ibmcloud plugin install <plugin-name>'. Popular plugins include container-service, cloud-functions, and dev.",
       "source": "IBM Cloud CLI Plugins",
       "metadata": {
-        "category": "plugin_guide",
-        "type": "documentation"
+        "type": "documentation",
+        "category": "plugin_guide"
       },
       "embedding": [
         0.0,
@@ -1585,8 +1585,8 @@
       "content": "To manage Cloud Foundry applications with IBM Cloud CLI, use commands like 'ibmcloud cf push' to deploy apps, 'ibmcloud cf apps' to list apps, 'ibmcloud cf logs' to view logs, and 'ibmcloud cf delete' to remove apps.",
       "source": "Cloud Foundry Management",
       "metadata": {
-        "category": "cf_commands",
-        "type": "documentation"
+        "type": "documentation",
+        "category": "cf_commands"
       },
       "embedding": [
         0.0,
@@ -1980,8 +1980,8 @@
       "content": "IBM Cloud CLI supports multiple output formats including JSON, table, and CSV. Use the '--output json' flag to get machine-readable output for scripting and automation.",
       "source": "IBM Cloud CLI Output Formats",
       "metadata": {
-        "type": "documentation",
-        "category": "output_formatting"
+        "category": "output_formatting",
+        "type": "documentation"
       },
       "embedding": [
         0.0,
@@ -2375,8 +2375,8 @@
       "content": "Skip to content IBM  Cloud Catalog Catalog Cost Estimator Cost Estimator Help Help Docs Log in Sign up Error Change theme This feature is in  early stage , some parts of the platform might not fully support different themes yet. Cancel Confirm",
       "source": "https://cloud.ibm.com/docs/cli",
       "metadata": {
-        "url": "https://cloud.ibm.com/docs/cli",
-        "element_type": "div"
+        "element_type": "div",
+        "url": "https://cloud.ibm.com/docs/cli"
       },
       "embedding": [
         0.0,
@@ -4350,8 +4350,8 @@
       "content": "IBM  Cloud Catalog Catalog Cost Estimator Cost Estimator Help Help Docs",
       "source": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli",
       "metadata": {
-        "url": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli",
-        "element_type": "div"
+        "element_type": "div",
+        "url": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli"
       },
       "embedding": [
         0.0,
@@ -4745,8 +4745,8 @@
       "content": "Change theme This feature is in  early stage , some parts of the platform might not fully support different themes yet. Cancel Confirm",
       "source": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli",
       "metadata": {
-        "element_type": "div",
-        "url": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli"
+        "url": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli",
+        "element_type": "div"
       },
       "embedding": [
         0.0,
@@ -5140,8 +5140,8 @@
       "content": "This feature is in  early stage , some parts of the platform might not fully support different themes yet.",
       "source": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli",
       "metadata": {
-        "url": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli",
-        "element_type": "div"
+        "element_type": "div",
+        "url": "https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli"
       },
       "embedding": [
         0.0,
@@ -5930,8 +5930,8 @@
       "content": "IBM  Cloud Catalog Catalog Cost Estimator Cost Estimator Help Help Docs",
       "source": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started",
       "metadata": {
-        "url": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started",
-        "element_type": "div"
+        "element_type": "div",
+        "url": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started"
       },
       "embedding": [
         0.0,
@@ -6325,8 +6325,8 @@
       "content": "Change theme This feature is in  early stage , some parts of the platform might not fully support different themes yet. Cancel Confirm",
       "source": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started",
       "metadata": {
-        "url": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started",
-        "element_type": "div"
+        "element_type": "div",
+        "url": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started"
       },
       "embedding": [
         0.0,
@@ -6720,8 +6720,8 @@
       "content": "This feature is in  early stage , some parts of the platform might not fully support different themes yet.",
       "source": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started",
       "metadata": {
-        "element_type": "div",
-        "url": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started"
+        "url": "https://cloud.ibm.com/docs/cli?topic=cli-getting-started",
+        "element_type": "div"
       },
       "embedding": [
         0.0,

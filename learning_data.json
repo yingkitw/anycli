@@ -1,0 +1,85 @@
+{
+  "corrections": [
+    {
+      "original_query": "list all resource groups",
+      "incorrect_command": "ibmcloud resource resource-groupsQuery:",
+      "correct_command": "",
+      "error_message": "Command 'ibmcloud resource resource-groupsQuery:' failed execution",
+      "correction_type": {
+        "Other": "ExecutionError"
+      },
+      "timestamp": "2025-09-16T17:10:23.649462Z",
+      "confidence_score": 1.0,
+      "success_rate": 1.0,
+      "usage_count": 1
+    },
+    {
+      "original_query": "list all resource groups",
+      "incorrect_command": "ibmcloud resource resource-groups",
+      "correct_command": "",
+      "error_message": "Command 'ibmcloud resource resource-groups' failed execution",
+      "correction_type": {
+        "Other": "ExecutionError"
+      },
+      "timestamp": "2025-09-16T17:10:57.677141Z",
+      "confidence_score": 1.0,
+      "success_rate": 1.0,
+      "usage_count": 1
+    },
+    {
+      "original_query": "show me all wml instance",
+      "incorrect_command": "ibmcloud resource service-instances --service-name wml",
+      "correct_command": "",
+      "error_message": "Command 'ibmcloud resource service-instances --service-name wml' failed execution",
+      "correction_type": {
+        "Other": "ExecutionError"
+      },
+      "timestamp": "2025-09-16T17:12:25.373709Z",
+      "confidence_score": 1.0,
+      "success_rate": 1.0,
+      "usage_count": 1
+    }
+  ],
+  "patterns": {
+    "general": [
+      "",
+      "",
+      ""
+    ]
+  },
+  "failure_patterns": [],
+  "retry_strategies": {
+    "AuthenticationError": {
+      "strategy_type": "NoRetry",
+      "max_attempts": 1,
+      "delay_ms": 0,
+      "success_rate": 0.1
+    },
+    "ParameterError": {
+      "strategy_type": "LinearBackoff",
+      "max_attempts": 2,
+      "delay_ms": 500,
+      "success_rate": 0.75
+    },
+    "NetworkError": {
+      "strategy_type": "ExponentialBackoff",
+      "max_attempts": 3,
+      "delay_ms": 1000,
+      "success_rate": 0.7
+    },
+    "CommandNotFound": {
+      "strategy_type": "ImmediateRetry",
+      "max_attempts": 2,
+      "delay_ms": 0,
+      "success_rate": 0.6
+    },
+    "InvalidSyntax": {
+      "strategy_type": "ContextualRetry",
+      "max_attempts": 2,
+      "delay_ms": 500,
+      "success_rate": 0.8
+    }
+  },
+  "success_metrics": {},
+  "last_updated": "2025-09-16T17:12:25.373717Z"
+}

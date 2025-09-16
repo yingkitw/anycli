@@ -14,9 +14,10 @@ mod translator;
 use watsonx::WatsonxAI;
 use translator::CommandTranslator;
 
-/// Display startup banner
+/// Display startup banner with Carbon Design System inspired styling
 fn display_banner() {
     println!();
+    // Using IBM Carbon Design System color palette and typography principles
     println!("{}", "┌─────────────────────────────────────────────────────────────────┐".blue());
     println!("{}", "│                                                                 │".blue());
     println!("│  {}  {}                                    │", "IBM Cloud".blue().bold(), "AI CLI".green().bold());
@@ -28,9 +29,12 @@ fn display_banner() {
     println!("{}", "│  • 🔧 Intelligent error handling & suggestions                 │".blue());
     println!("{}", "│  • 📝 Interactive command editing (Esc to cancel)              │".blue());
     println!("{}", "│  • ⬆️  Command history navigation (↑/↓ arrows)                  │".blue());
+    println!("{}", "│  • 🔐 Automatic login status verification                      │".blue());
     println!("{}", "│                                                                 │".blue());
     println!("│  {} {}                                        │", "v0.1.0".dimmed(), "• Powered by watsonx.ai".dimmed());
     println!("{}", "└─────────────────────────────────────────────────────────────────┘".blue());
+    println!();
+    println!("{}", "💡 Tip: Type your request in natural language, or 'help' for commands".dimmed());
     println!();
 }
 
@@ -41,6 +45,7 @@ async fn handle_input_with_history(history: &mut Vec<String>) -> Result<String> 
     let mut history_index: Option<usize> = None;
     let mut cursor_pos = 0;
     
+    // Carbon Design System: Consistent, accessible prompt with clear visual hierarchy
     print!("{} ", "ibmcloud-ai>".green().bold());
     io::stdout().flush()?;
     
@@ -49,6 +54,7 @@ async fn handle_input_with_history(history: &mut Vec<String>) -> Result<String> 
             if let Event::Key(KeyEvent { code, .. }) = event::read()? {
                 match code {
                     KeyCode::Up => {
+                        // Enhanced history navigation with Carbon UX principles
                         if !history.is_empty() {
                             let new_index = match history_index {
                                 None => history.len() - 1,
@@ -58,13 +64,14 @@ async fn handle_input_with_history(history: &mut Vec<String>) -> Result<String> 
                             input = history[new_index].clone();
                             cursor_pos = input.len();
                             
-                            // Clear current line and redraw
+                            // Clear current line and redraw with improved visual feedback
                             print!("\r{} {}{}", "ibmcloud-ai>".green().bold(), input, " ".repeat(20));
                             print!("\r{} {}", "ibmcloud-ai>".green().bold(), input);
                             io::stdout().flush()?;
                         }
                     }
                     KeyCode::Down => {
+                        // Enhanced forward navigation in command history
                         if let Some(idx) = history_index {
                             if idx < history.len() - 1 {
                                 let new_index = idx + 1;
@@ -86,12 +93,19 @@ async fn handle_input_with_history(history: &mut Vec<String>) -> Result<String> 
                         disable_raw_mode()?;
                         println!();
                         let trimmed_input = input.trim().to_string();
+                        
+                        // Enhanced history management following Carbon principles
                         if !trimmed_input.is_empty() && (history.is_empty() || history.last() != Some(&trimmed_input)) {
                             history.push(trimmed_input.clone());
+                            // Keep history manageable (Carbon principle: performance optimization)
+                            if history.len() > 50 {
+                                history.remove(0);
+                            }
                         }
                         return Ok(trimmed_input);
                     }
                     KeyCode::Backspace => {
+                        // Enhanced backspace handling with visual feedback
                         if !input.is_empty() {
                             input.pop();
                             cursor_pos = cursor_pos.saturating_sub(1);
@@ -101,7 +115,15 @@ async fn handle_input_with_history(history: &mut Vec<String>) -> Result<String> 
                             io::stdout().flush()?;
                         }
                     }
+                    KeyCode::Esc => {
+                        // Carbon UX: Clear escape behavior for better user experience
+                        disable_raw_mode()?;
+                        println!();
+                        println!("{} {}", "❌".yellow(), "Input cancelled. Type 'exit' to quit.".yellow());
+                        return Ok(String::new());
+                    }
                     KeyCode::Char(c) => {
+                        // Enhanced character input with immediate visual feedback
                         input.push(c);
                         cursor_pos += 1;
                         history_index = None; // Reset history navigation when editing
@@ -338,68 +360,121 @@ async fn main() -> Result<()> {
     
     let _cli = Cli::parse();
     
-    // Always start chat mode
+    // Enhanced startup with Carbon Design System principles
     display_banner();
     println!("{} {}", "💬".blue(), "Starting IBM Cloud AI chat mode...".blue());
-    println!("{}", "Type 'exit' or 'quit' to end the session.".italic());
-    println!("{}", "Type 'exec <command>' to execute a command.".italic());
-    println!("{}", "Use ↑/↓ arrow keys to navigate command history.".italic());
+    println!("{}", "Enhanced with watsonx.ai and Carbon Design System".italic().dimmed());
+    println!();
+    println!("{} {}", "📖".cyan(), "Usage Guide:".cyan().bold());
+    println!("  • Type natural language queries (e.g., 'list my watson services')");
+    println!("  • Use ↑/↓ arrow keys to navigate command history");
+    println!("  • Press Esc to cancel current input");
+    println!("  • Type 'exec <command>' to execute a command directly");
+    println!("  • Type 'exit' or 'quit' to end the session");
     println!();
             
-            // Initialize WatsonX
-            let mut watsonx = WatsonxAI::new()?;
-            watsonx.connect().await?;
-            
-            // Create translator
-            let translator = CommandTranslator::new(watsonx);
-            
-            // Initialize command history
-            let mut command_history: Vec<String> = Vec::new();
-            
-            // Chat loop
-            loop {
-                let input = handle_input_with_history(&mut command_history).await?;
+    // Enhanced initialization with better error handling
+    println!("{} {}", "🔄".yellow(), "Initializing watsonx.ai connection...".yellow());
+    let mut watsonx = match WatsonxAI::new() {
+        Ok(w) => w,
+        Err(e) => {
+            println!("{} {}: {}", "❌".red(), "Failed to initialize WatsonX".red(), e);
+            println!("{} {}", "💡".cyan(), "Please check your .env file and ensure WATSONX_API_KEY and WATSONX_PROJECT_ID are set".cyan());
+            return Err(e);
+        }
+    };
+    
+    match watsonx.connect().await {
+        Ok(_) => println!("{} {}", "✅".green(), "Connected to watsonx.ai successfully".green()),
+        Err(e) => {
+            println!("{} {}: {}", "❌".red(), "Failed to connect to WatsonX".red(), e);
+            println!("{} {}", "💡".cyan(), "Please verify your API credentials and network connection".cyan());
+            return Err(e);
+        }
+    }
+    
+    // Create translator with enhanced error handling
+    let translator = CommandTranslator::new(watsonx);
+    
+    // Initialize command history with Carbon-inspired UX
+    let mut command_history: Vec<String> = Vec::new();
+    
+    println!("{} {}", "🚀".green(), "Ready! Start typing your IBM Cloud queries...".green());
+    println!();
+    
+    // Enhanced chat loop with better error handling and user experience
+    loop {
+        let input = match handle_input_with_history(&mut command_history).await {
+            Ok(input) => input,
+            Err(e) => {
+                println!("{} {}: {}", "❌".red(), "Input error".red(), e);
+                continue;
+            }
+        };
+        
+        if input.is_empty() {
+            continue;
+        }
+        
+        if input == "exit" || input == "quit" {
+            println!("{} {}", "👋".blue(), "Thank you for using IBM Cloud AI Assistant!".blue());
+            break;
+        }
+        
+        if input.starts_with("exec ") {
+            let command = input.trim_start_matches("exec ").trim();
+            if let Err(e) = execute_command(command).await {
+                println!("{} {}: {}", "❌".red(), "Execution error".red(), e);
+            }
+            continue;
+        }
+        
+        // Enhanced translation with better user feedback
+        println!("{} {}", "🤔".cyan(), "Processing with watsonx.ai...".cyan());
+        
+        match translator.translate(&input).await {
+            Ok(command) => {
+                // Carbon Design: Clear visual hierarchy and actionable information
+                println!();
+                println!("{} {}", "💡".green(), "Generated IBM Cloud CLI command:".green().bold());
+                println!("┌─────────────────────────────────────────────────────────────┐");
+                println!("│ {}                                                    │", 
+                    format!("{:<59}", command));
+                println!("└─────────────────────────────────────────────────────────────┘");
                 
-                if input.is_empty() {
-                    continue;
-                }
-                
-                if input == "exit" || input == "quit" {
-                    println!("{} {}", "👋".blue(), "Goodbye!".blue());
-                    break;
-                }
-                
-                if input.starts_with("exec ") {
-                    let command = input.trim_start_matches("exec ").trim();
-                    execute_command(command).await?;
-                    continue;
-                }
-                
-                println!("{} {}", "🤔".cyan(), "Translating your request...".cyan());
-                
-                // Translate query
-                match translator.translate(&input).await {
-                    Ok(command) => {
-                        println!("{} {}", "💡".green(), "Translated command:".green());
-                        println!("{}", command.bold());
-                        
-                        // Allow editing the command with Esc to cancel
-                        match handle_edit_input(&command).await? {
-                            Some(edited_command) => {
-                                // User confirmed or edited the command
-                                execute_command(&edited_command).await?;
-                            }
-                            None => {
-                                // User cancelled with Esc
-                                continue;
-                            }
+                // Enhanced command editing with better UX
+                match handle_edit_input(&command).await {
+                    Ok(Some(final_command)) => {
+                        if let Err(e) = execute_command(&final_command).await {
+                            println!("{} {}: {}", "❌".red(), "Execution failed".red(), e);
+                            println!("{} {}", "💡".cyan(), "You can try modifying the command or ask for help".cyan());
                         }
-                    },
+                    }
+                    Ok(None) => {
+                        println!("{} {}", "⏭️".yellow(), "Command execution cancelled".yellow());
+                    }
                     Err(e) => {
-                        println!("{} {}: {}", "❌".red(), "Translation failed".red(), e);
+                        println!("{} {}: {}", "❌".red(), "Edit error".red(), e);
                     }
                 }
             }
+            Err(e) => {
+                // Enhanced error handling with actionable guidance
+                println!("{} {}: {}", "❌".red(), "Translation failed".red(), e);
+                println!();
+                println!("{} {}", "💡".cyan(), "Suggestions:".cyan().bold());
+                println!("  • Try rephrasing your query more specifically");
+                println!("  • Use IBM Cloud service names (e.g., 'watson', 'code engine')");
+                println!("  • Check your network connection and API credentials");
+                println!("  • Example queries:");
+                println!("    - 'list my watson machine learning services'");
+                println!("    - 'show code engine applications'");
+                println!("    - 'login with sso'");
+            }
+        }
+        
+        println!(); // Add spacing for better readability
+    }
     
     Ok(())
 }

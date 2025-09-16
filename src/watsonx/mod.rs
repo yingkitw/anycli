@@ -144,6 +144,7 @@ impl WatsonxAI {
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("Not authenticated. Call connect() first."))?;
 
+        // Enhanced parameters following WatsonX best practices
         let params = GenerationParams {
             decoding_method: "greedy".to_string(),
             max_new_tokens: max_output,
@@ -151,7 +152,7 @@ impl WatsonxAI {
             top_k: 50,
             top_p: 1.0,
             repetition_penalty: 1.1,
-            stop_sequences: vec![],
+            stop_sequences: vec!["\n\n".to_string(), "Human:".to_string(), "Assistant:".to_string()],
         };
 
         let request_body = GenerationRequest {
@@ -173,31 +174,50 @@ impl WatsonxAI {
             .send()
             .await?;
 
+        // Enhanced error handling with detailed status information
         if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
             return Err(anyhow::anyhow!(
-                "Non-200 response: {}",
-                response.text().await?
+                "WatsonX API request failed with status {}: {}",
+                status,
+                error_text
             ));
         }
 
         let mut answer = String::new();
-        
-        // Get the response body as text instead of using bytes_stream
         let response_text = response.text().await?;
         
+        // Improved response parsing with better error handling
         for line in response_text.lines() {
             if line.starts_with("data: ") {
                 let json_data = &line[6..]; // Remove "data: " prefix
                 
-                if let Ok(data) = serde_json::from_str::<GenerationData>(json_data) {
-                    if let Some(result) = data.results.first() {
-                        answer.push_str(&result.generated_text);
+                // Skip empty data lines
+                if json_data.trim().is_empty() || json_data.trim() == "[DONE]" {
+                    continue;
+                }
+                
+                match serde_json::from_str::<GenerationData>(json_data) {
+                    Ok(data) => {
+                        if let Some(result) = data.results.first() {
+                            answer.push_str(&result.generated_text);
+                        }
+                    }
+                    Err(e) => {
+                        // Log parsing errors but continue processing
+                        eprintln!("Warning: Failed to parse response line: {} - Error: {}", json_data, e);
                     }
                 }
             }
         }
         
-        Ok(answer)
+        // Ensure we have some response
+        if answer.trim().is_empty() {
+            return Err(anyhow::anyhow!("Empty response from WatsonX API"));
+        }
+        
+        Ok(answer.trim().to_string())
     }
 }
 

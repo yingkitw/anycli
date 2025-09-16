@@ -6,6 +6,7 @@
     <title>IBM Cloud CLI AI</title>
     <!-- Carbon Design System -->
     <link rel="stylesheet" href="https://unpkg.com/carbon-components/css/carbon-components.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
     <script src="https://unpkg.com/carbon-components/scripts/carbon-components.min.js"></script>
     <style>
         :root {
@@ -13,20 +14,81 @@
             --cds-interactive-02: #393939;
             --cds-interactive-03: #0f62fe;
             --cds-interactive-04: #0f62fe;
+            --cds-ui-background: #f4f4f4;
+            --cds-text-01: #161616;
+            --cds-text-02: #525252;
+            --cds-text-03: #a8a8a8;
+            --cds-text-04: #ffffff;
+            --cds-icon-01: #161616;
+            --cds-icon-02: #525252;
+            --cds-field-01: #f4f4f4;
+            --cds-field-02: #ffffff;
+            --cds-inverse-01: #ffffff;
+            --cds-inverse-02: #393939;
+            --cds-support-01: #da1e28;
+            --cds-support-02: #24a148;
+            --cds-support-03: #f1c21b;
+            --cds-support-04: #0043ce;
+            --cds-inverse-support-01: #fa4d56;
+            --cds-inverse-support-02: #42be65;
+            --cds-inverse-support-03: #f1c21b;
+            --cds-inverse-support-04: #4589ff;
+            --cds-overlay-01: rgba(22, 22, 22, 0.7);
+            --cds-focus: #0f62fe;
+            --cds-inverse-focus-ui: #ffffff;
+            --cds-hover-primary: #0353e9;
+            --cds-active-primary: #002d9c;
+            --cds-hover-primary-text: #0043ce;
+            --cds-hover-secondary: #4c4c4c;
+            --cds-active-secondary: #6f6f6f;
+            --cds-hover-tertiary: #0353e9;
+            --cds-active-tertiary: #002d9c;
+            --cds-hover-ui: #e5e5e5;
+            --cds-hover-light-ui: #e5e5e5;
+            --cds-active-ui: #c6c6c6;
+            --cds-active-light-ui: #c6c6c6;
+            --cds-selected-ui: #e0e0e0;
+            --cds-selected-light-ui: #e0e0e0;
+            --cds-hover-selected-ui: #cacaca;
+            --cds-inverse-hover-ui: #4c4c4c;
+            --cds-hover-danger: #ba1b23;
+            --cds-active-danger: #750e13;
+            --cds-hover-row: #e5e5e5;
+            --cds-visited-link: #8a3ffc;
+            --cds-disabled-01: #f4f4f4;
+            --cds-disabled-02: #c6c6c6;
+            --cds-disabled-03: #8d8d8d;
+            --cds-highlight: #d0e2ff;
+            --cds-decorative-01: #e0e0e0;
+            --cds-skeleton-01: #e5e5e5;
+            --cds-skeleton-02: #c6c6c6;
         }
         body {
             font-family: 'IBM Plex Sans', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
-            color: #161616;
+            background-color: var(--cds-ui-background);
+            color: var(--cds-text-01);
+            line-height: 1.5;
         }
         .bx--header {
             background-color: #161616;
             border-bottom: 1px solid #393939;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
         }
         .bx--header__name {
             font-weight: 600;
+            color: white;
+            text-decoration: none;
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            height: 48px;
+        }
+        .content {
+            padding-top: 48px; /* Header height */
         }
         .container {
             max-width: 1200px;
@@ -36,59 +98,183 @@
         .hero {
             background-color: #0f62fe;
             color: white;
-            padding: 4rem 1rem;
+            padding: 5rem 1rem;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 100%);
+            z-index: 1;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
         }
         .hero h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
+            font-weight: 600;
             margin-bottom: 1rem;
+            letter-spacing: -0.5px;
         }
         .hero p {
             font-size: 1.25rem;
             max-width: 800px;
             margin: 0 auto;
+            font-weight: 300;
+        }
+        .section-title {
+            font-size: 2rem;
+            font-weight: 400;
+            margin: 3rem 0 2rem;
+            color: var(--cds-text-01);
+            text-align: center;
         }
         .features {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 2rem;
             margin-top: 3rem;
         }
         .feature {
             background-color: white;
             border-radius: 4px;
-            padding: 1.5rem;
+            padding: 2rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            margin-bottom: 1.5rem;
+            color: var(--cds-interactive-01);
+            font-size: 2rem;
         }
         .feature h3 {
             margin-top: 0;
-            color: #0f62fe;
+            color: var(--cds-interactive-01);
+            font-weight: 500;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
         }
-        .installation {
+        .feature p {
+            margin-bottom: 0;
+            color: var(--cds-text-02);
+            flex-grow: 1;
+        }
+        .card {
             margin-top: 3rem;
             background-color: white;
             border-radius: 4px;
             padding: 2rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        .card h2 {
+            margin-top: 0;
+            color: var(--cds-text-01);
+            font-weight: 500;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--cds-ui-background);
+        }
+        .card h3 {
+            color: var(--cds-text-01);
+            font-weight: 500;
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem;
+        }
         code {
-            background-color: #f4f4f4;
+            background-color: var(--cds-field-01);
             padding: 0.2rem 0.4rem;
             border-radius: 4px;
             font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9em;
         }
         pre {
-            background-color: #f4f4f4;
+            background-color: var(--cds-field-01);
             padding: 1rem;
             border-radius: 4px;
             overflow-x: auto;
+            margin: 1rem 0;
+            border-left: 4px solid var(--cds-interactive-01);
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.9rem;
         }
         .footer {
             background-color: #161616;
             color: white;
-            padding: 2rem 1rem;
+            padding: 3rem 1rem;
             text-align: center;
-            margin-top: 3rem;
+            margin-top: 4rem;
+        }
+        .footer p {
+            margin: 0;
+            opacity: 0.8;
+        }
+        .btn {
+            display: inline-block;
+            background-color: var(--cds-interactive-01);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: 1.5rem;
+            transition: background-color 0.2s ease;
+        }
+        .btn:hover {
+            background-color: var(--cds-hover-primary);
+        }
+        .btn-secondary {
+            background-color: transparent;
+            border: 2px solid white;
+        }
+        .btn-secondary:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .hero-buttons {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        ol, ul {
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        li:last-child {
+            margin-bottom: 0;
+        }
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .hero p {
+                font-size: 1.1rem;
+            }
+            .features {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -99,67 +285,97 @@
         </a>
     </header>
 
-    <div class="hero">
-        <h1>IBM Cloud CLI AI</h1>
-        <p>An AI-powered assistant for the IBM Cloud CLI that translates natural language queries into IBM Cloud commands.</p>
-    </div>
-
-    <div class="container">
-        <div class="features">
-            <div class="feature">
-                <h3>Natural Language Processing</h3>
-                <p>Convert plain English requests into IBM Cloud CLI commands without memorizing complex syntax.</p>
-            </div>
-            <div class="feature">
-                <h3>Interactive Chat Mode</h3>
-                <p>Engage in a conversation-like interface with the CLI for a more intuitive experience.</p>
-            </div>
-            <div class="feature">
-                <h3>Command Editing</h3>
-                <p>Review and modify translated commands before execution to ensure they match your intent.</p>
-            </div>
-            <div class="feature">
-                <h3>Command Execution</h3>
-                <p>Run the commands directly from the interface with a simple confirmation.</p>
+    <div class="content">
+        <div class="hero">
+            <div class="hero-content">
+                <h1>IBM Cloud CLI AI</h1>
+                <p>An AI-powered assistant that translates natural language into IBM Cloud commands</p>
+                <div class="hero-buttons">
+                    <a href="#installation" class="btn">Get Started</a>
+                    <a href="https://github.ibm.com/watsonx-apac/ibmcloud-cli-ai" class="btn btn-secondary">View on GitHub</a>
+                </div>
             </div>
         </div>
 
-        <div class="installation">
-            <h2>Installation</h2>
-            <ol>
-                <li>Clone the repository:
-                    <pre><code>git clone git@github.ibm.com:watsonx-apac/ibmcloud-cli-ai.git</code></pre>
-                </li>
-                <li>Create a <code>.env</code> file with your WatsonX API credentials:
-                    <pre><code>WATSONX_API_KEY=your_api_key
+        <div class="container">
+            <h2 class="section-title">Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">💬</div>
+                    <h3>Natural Language Processing</h3>
+                    <p>Convert plain English requests into IBM Cloud CLI commands without memorizing complex syntax.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Interactive Chat Mode</h3>
+                    <p>Engage in a conversation-like interface with the CLI for a more intuitive experience.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✏️</div>
+                    <h3>Command Editing</h3>
+                    <p>Review and modify translated commands before execution to ensure they match your intent.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Command Execution</h3>
+                    <p>Run the commands directly from the interface with a simple confirmation.</p>
+                </div>
+            </div>
+
+            <div class="card" id="installation">
+                <h2>Installation</h2>
+                <ol>
+                    <li>Clone the repository:
+                        <pre><code>git clone git@github.ibm.com:watsonx-apac/ibmcloud-cli-ai.git</code></pre>
+                    </li>
+                    <li>Create a <code>.env</code> file with your WatsonX API credentials:
+                        <pre><code>WATSONX_API_KEY=your_api_key
 WATSONX_PROJECT_ID=your_project_id</code></pre>
-                </li>
-                <li>Build the project:
-                    <pre><code>cargo build</code></pre>
-                </li>
-            </ol>
+                    </li>
+                    <li>Build the project:
+                        <pre><code>cargo build</code></pre>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h2>Usage</h2>
+                <h3>Ask a single question</h3>
+                <pre><code>cargo run -- ask "list all my code engine instances"</code></pre>
+
+                <h3>Start interactive chat mode</h3>
+                <pre><code>cargo run -- chat</code></pre>
+
+                <p>In chat mode:</p>
+                <ul>
+                    <li>Type your query in natural language</li>
+                    <li>The AI will translate it to an IBM Cloud command</li>
+                    <li>Edit the command if needed or press Enter to execute</li>
+                    <li>Type <code>exit</code> or <code>quit</code> to end the session</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>Examples</h2>
+                
+                <h3>Natural Language to IBM Cloud Commands</h3>
+                <p>Here are some examples of natural language queries and their translated IBM Cloud commands:</p>
+                
+                <pre><code>Query: "Show me all my code engine applications"
+Command: ibmcloud ce app list</code></pre>
+                
+                <pre><code>Query: "List my Watson Machine Learning instances"
+Command: ibmcloud resource service-instances --service-name watson-machine-learning</code></pre>
+                
+                <pre><code>Query: "Create a new VPC in us-south"
+Command: ibmcloud is vpc-create my-vpc --zone us-south-1</code></pre>
+            </div>
         </div>
 
-        <div class="installation">
-            <h2>Usage</h2>
-            <h3>Ask a single question</h3>
-            <pre><code>cargo run -- ask "list all my code engine instances"</code></pre>
-
-            <h3>Start interactive chat mode</h3>
-            <pre><code>cargo run -- chat</code></pre>
-
-            <p>In chat mode:</p>
-            <ul>
-                <li>Type your query in natural language</li>
-                <li>The AI will translate it to an IBM Cloud command</li>
-                <li>Edit the command if needed or press Enter to execute</li>
-                <li>Type <code>exit</code> or <code>quit</code> to end the session</li>
-            </ul>
-        </div>
+        <footer class="footer">
+            <p>Powered by Rust, WatsonX AI, and IBM Cloud CLI</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">© 2023 IBM Corporation</p>
+        </footer>
     </div>
-
-    <footer class="footer">
-        <p>Powered by Rust, WatsonX AI, and IBM Cloud CLI</p>
-    </footer>
 </body>
 </html>

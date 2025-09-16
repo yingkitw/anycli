@@ -6,10 +6,12 @@ An AI-powered assistant for the IBM Cloud CLI that translates natural language q
 
 - **Natural Language Processing**: Convert plain English requests into IBM Cloud CLI commands
 - **Interactive Chat Mode**: Engage in a conversation-like interface with the CLI
-- **Command Editing**: Review and modify translated commands before execution
+- **Enhanced Command Editing**: Review and modify translated commands before execution with Esc to cancel
+- **Command History Navigation**: Use ↑/↓ arrow keys to navigate through previous commands
 - **Command Execution**: Run the commands directly from the interface
 - **Interactive Command Support**: Automatically handles interactive commands like SSO login
 - **Login Status Check**: Automatically checks if you're logged into IBM Cloud before executing commands
+- **Professional Startup Banner**: Clean, informative banner displaying features and version info
 
 ## Installation
 
@@ -36,9 +38,23 @@ icx
 In chat mode:
 - Type your query in natural language
 - The AI will translate it to an IBM Cloud command
-- Edit the command if needed or press Enter to execute
+- Edit the command if needed or press Enter to execute, Esc to cancel
+- Use ↑/↓ arrow keys to navigate through command history
 - Type `exec <command>` to execute a command directly
 - Type `exit` or `quit` to end the session
+
+### Key Features in Action
+
+**Command History Navigation:**
+- Press ↑ to go back through previous commands
+- Press ↓ to go forward through command history
+- Edit any recalled command before execution
+
+**Enhanced Command Editing:**
+- Press Enter to execute the suggested command
+- Press Esc to cancel and return to chat
+- Use Backspace to edit the command
+- Type new characters to modify the command
 
 ### Examples
 

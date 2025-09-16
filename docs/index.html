@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IBM Cloud CLI AI</title>
+    <title>IBM Cloud CLI AI (icx)</title>
     <!-- Carbon Design System -->
     <link rel="stylesheet" href="https://unpkg.com/carbon-components/css/carbon-components.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -279,16 +279,16 @@
     </style>
 </head>
 <body>
-    <header class="bx--header" role="banner" aria-label="IBM Cloud CLI AI">
+    <header class="bx--header" role="banner" aria-label="IBM Cloud CLI AI (icx)">
         <a class="bx--header__name" href="/">
-            <span>IBM Cloud CLI AI</span>
+            <span>IBM Cloud CLI AI (icx)</span>
         </a>
     </header>
 
     <div class="content">
         <div class="hero">
             <div class="hero-content">
-                <h1>IBM Cloud CLI AI</h1>
+                <h1>IBM Cloud CLI AI (icx)</h1>
                 <p>An AI-powered assistant that translates natural language into IBM Cloud commands</p>
                 <div class="hero-buttons">
                     <a href="#installation" class="btn">Get Started</a>
@@ -320,6 +320,11 @@
                     <h3>Command Execution</h3>
                     <p>Run the commands directly from the interface with a simple confirmation.</p>
                 </div>
+                <div class="feature">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Login Status Check</h3>
+                    <p>Automatically checks if you're logged into IBM Cloud before executing commands.</p>
+                </div>
             </div>
 
             <div class="card" id="installation">
@@ -340,17 +345,15 @@ WATSONX_PROJECT_ID=your_project_id</code></pre>
 
             <div class="card">
                 <h2>Usage</h2>
-                <h3>Ask a single question</h3>
-                <pre><code>cargo run -- ask "list all my code engine instances"</code></pre>
-
-                <h3>Start interactive chat mode</h3>
-                <pre><code>cargo run -- chat</code></pre>
+                <p>Simply run the CLI to start the interactive chat mode:</p>
+<pre><code>icx</code></pre>
 
                 <p>In chat mode:</p>
                 <ul>
                     <li>Type your query in natural language</li>
                     <li>The AI will translate it to an IBM Cloud command</li>
                     <li>Edit the command if needed or press Enter to execute</li>
+                    <li>Type <code>exec &lt;command&gt;</code> to execute a command directly</li>
                     <li>Type <code>exit</code> or <code>quit</code> to end the session</li>
                 </ul>
             </div>
@@ -358,8 +361,16 @@ WATSONX_PROJECT_ID=your_project_id</code></pre>
             <div class="card">
                 <h2>Examples</h2>
                 
+                <h3>Interactive Chat Examples</h3>
+                <p>Here are some examples of how to use the chat interface:</p>
+                
+                <pre><code>ibmcloud-ai> list my code engine applications
+ibmcloud-ai> show me all my kubernetes clusters
+ibmcloud-ai> create a new resource group called my-project
+ibmcloud-ai> exec ibmcloud target --cf</code></pre>
+                
                 <h3>Natural Language to IBM Cloud Commands</h3>
-                <p>Here are some examples of natural language queries and their translated IBM Cloud commands:</p>
+                <p>Examples of natural language queries and their translated IBM Cloud commands:</p>
                 
                 <pre><code>Query: "Show me all my code engine applications"
 Command: ibmcloud ce app list</code></pre>

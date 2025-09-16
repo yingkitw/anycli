@@ -22,16 +22,23 @@ impl CommandTranslator {
             - For listing resources use: 'ibmcloud resource service-instances [--service-name NAME]'\n\
             - For listing services catalog use: 'ibmcloud catalog service-marketplace'\n\
             - For WML instances use: 'ibmcloud resource service-instances --service-name watson-machine-learning'\n\
-            - For Code Engine use: 'ibmcloud ce [subcommand]' or 'ibmcloud resource service-instances --service-name code-engine'\n\
+            - For Code Engine applications use: 'ibmcloud ce app list'\n\
+            - For Code Engine projects use: 'ibmcloud ce project list'\n\
+            - For Code Engine jobs use: 'ibmcloud ce job list'\n\
+            - For Code Engine builds use: 'ibmcloud ce build list'\n\
+            - For Code Engine service instances use: 'ibmcloud resource service-instances --service-name codeengine'\n\
             - For general resource listing use: 'ibmcloud resource service-instances' NOT 'services list'\n\
+            - For login with SSO use: 'ibmcloud login --sso' (with double dashes)\n\
+            - For login without SSO use: 'ibmcloud login'\n\
+            - Always use double dashes (--) for multi-character options, not single dash\n\
             \n\
             Make your best guess based on IBM Cloud CLI conventions and these guidelines.",
             query
         );
         
-        // Get command translation from WatsonX
+        // Get command translation from WatsonX with longer timeout for complex queries
         let model_id = WatsonxAI::GRANITE_3_3_8B_INSTRUCT;
-        let response = self.watsonx.watsonx_gen(&prompt, model_id, 200).await?;
+        let response = self.watsonx.watsonx_gen_with_timeout(&prompt, model_id, 200, std::time::Duration::from_secs(90)).await?;
         
         // Extract the first line that starts with "ibmcloud"
         let command = response.lines()

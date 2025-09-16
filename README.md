@@ -1,4 +1,4 @@
-# IBM Cloud CLI AI
+# IBM Cloud CLI AI (icx)
 
 An AI-powered assistant for the IBM Cloud CLI that translates natural language queries into IBM Cloud commands.
 
@@ -8,6 +8,8 @@ An AI-powered assistant for the IBM Cloud CLI that translates natural language q
 - **Interactive Chat Mode**: Engage in a conversation-like interface with the CLI
 - **Command Editing**: Review and modify translated commands before execution
 - **Command Execution**: Run the commands directly from the interface
+- **Interactive Command Support**: Automatically handles interactive commands like SSO login
+- **Login Status Check**: Automatically checks if you're logged into IBM Cloud before executing commands
 
 ## Installation
 
@@ -17,30 +19,35 @@ An AI-powered assistant for the IBM Cloud CLI that translates natural language q
    WATSONX_API_KEY=your_api_key
    WATSONX_PROJECT_ID=your_project_id
    ```
-3. Build the project:
+3. Build and install the CLI:
    ```
-   cargo build
+   cargo build --release
+   cargo install --path .
    ```
 
 ## Usage
 
-### Ask a single question
+Simply run the CLI to start the interactive chat mode:
 
 ```
-cargo run -- ask "list all my code engine instances"
-```
-
-### Start interactive chat mode
-
-```
-cargo run -- chat
+icx
 ```
 
 In chat mode:
 - Type your query in natural language
 - The AI will translate it to an IBM Cloud command
 - Edit the command if needed or press Enter to execute
+- Type `exec <command>` to execute a command directly
 - Type `exit` or `quit` to end the session
+
+### Examples
+
+```
+ibmcloud-ai> list my code engine applications
+ibmcloud-ai> show me all my kubernetes clusters
+ibmcloud-ai> create a new resource group called my-project
+ibmcloud-ai> exec ibmcloud target --cf
+```
 
 ## IBM Cloud CLI References
 

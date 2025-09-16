@@ -114,7 +114,7 @@ impl WatsonxAI {
         model_id: &str,
         max_output: u32,
     ) -> Result<String> {
-        self.watsonx_gen_with_timeout(prompt, model_id, max_output, Duration::from_secs(30))
+        self.watsonx_gen_with_timeout(prompt, model_id, max_output, Duration::from_secs(60))
             .await
     }
 

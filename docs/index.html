@@ -289,7 +289,7 @@
         <div class="hero">
             <div class="hero-content">
                 <h1>IBM Cloud CLI AI (icx)</h1>
-                <p>An AI-powered assistant that translates natural language into IBM Cloud commands</p>
+                <p>An intelligent AI-powered assistant with learning capabilities that translates natural language into IBM Cloud commands and continuously improves through user interactions</p>
                 <div class="hero-buttons">
                     <a href="#installation" class="btn">Get Started</a>
                     <a href="https://github.ibm.com/watsonx-apac/ibmcloud-cli-ai" class="btn btn-secondary">View on GitHub</a>
@@ -329,6 +329,21 @@
                     <div class="feature-icon">🔐</div>
                     <h3>Login Status Check</h3>
                     <p>Automatically checks if you're logged into IBM Cloud before executing commands.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Intelligent Learning System</h3>
+                    <p>AI-powered command learning that captures user corrections and improves suggestions over time with pattern recognition.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔌</div>
+                    <h3>Smart Plugin Error Handling</h3>
+                    <p>Detects missing plugin errors and provides specific guidance for installation and alternatives.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📚</div>
+                    <h3>Local RAG Engine</h3>
+                    <p>Enhanced knowledge base with IBM Cloud CLI documentation for better command suggestions and contextual help.</p>
                 </div>
             </div>
 
@@ -438,11 +453,46 @@ Command: ibmcloud resource service-instances --service-name watson-machine-learn
                 <pre><code>Query: "Create a new VPC in us-south"
 Command: ibmcloud is vpc-create my-vpc --zone us-south-1</code></pre>
             </div>
+            
+            <div class="card">
+                <h2>🧠 Learning System</h2>
+                <p>The AI assistant includes an intelligent learning system that continuously improves through user interactions:</p>
+                
+                <h3>Command Learning Features</h3>
+                <ul>
+                    <li><strong>Error Correction Learning:</strong> When commands fail, provide the correct command and the system learns from it</li>
+                    <li><strong>Pattern Recognition:</strong> Identifies common error patterns and suggests appropriate fixes</li>
+                    <li><strong>Contextual Suggestions:</strong> Provides better command suggestions based on previous corrections</li>
+                    <li><strong>Plugin Detection:</strong> Automatically detects missing plugin errors with specific guidance</li>
+                </ul>
+                
+                <h3>Enhanced Error Handling</h3>
+                <p>When commands fail due to missing plugins or other issues, the system provides:</p>
+                <ul>
+                    <li>🔌 <strong>Plugin Installation Guidance:</strong> Specific instructions for installing required plugins</li>
+                    <li>🔍 <strong>Alternative Suggestions:</strong> Commands that don't require additional plugins</li>
+                    <li>📝 <strong>Learning Opportunities:</strong> Capture corrections to improve future suggestions</li>
+                </ul>
+                
+                <h3>Example Learning Interaction</h3>
+                <pre><code>ibmcloud-ai> list my databases
+❌ Command failed: 'dbs' is not a registered command.
+
+🔌 This appears to be a missing plugin. You may need to:
+  • Install the required plugin with 'ibmcloud plugin install <plugin-name>'
+  • Check available plugins with 'ibmcloud plugin repo-plugins'
+  • Or use an alternative command that doesn't require plugins
+
+📝 If you know the correct command, I can learn from this for future requests.
+Enter the correct command: ibmcloud resource service-instances --service-name databases-for-postgresql
+
+✅ Thanks! I've learned this correction for future requests.</code></pre>
+            </div>
         </div>
 
         <footer class="footer">
-            <p>Powered by Rust, WatsonX AI, and IBM Cloud CLI</p>
-            <p style="margin-top: 0.5rem; font-size: 0.9rem;">© 2023 IBM Corporation</p>
+            <p>Powered by Rust, WatsonX AI, Local RAG Engine, and IBM Cloud CLI</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Enhanced with Intelligent Learning System • © 2023 IBM Corporation</p>
         </footer>
     </div>
 </body>

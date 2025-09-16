@@ -5,34 +5,71 @@ use std::process::Command;
 use std::io::{self, Write};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, size},
 };
 
 mod watsonx;
 mod translator;
+mod vector_store;
+mod document_indexer;
+mod rag;
+mod local_vector_store;
+mod local_document_indexer;
+mod local_rag;
+mod command_learning;
 
 use watsonx::WatsonxAI;
-use translator::CommandTranslator;
+use local_rag::LocalRAGEngine;
 
 /// Display startup banner with Carbon Design System inspired styling
 fn display_banner() {
+    let terminal_width = size().map(|(w, _)| w as usize).unwrap_or(80);
+    let banner_width = std::cmp::min(67, terminal_width.saturating_sub(4));
+    
+    let top_border = format!("┌{}┐", "─".repeat(banner_width - 2));
+    let bottom_border = format!("└{}┘", "─".repeat(banner_width - 2));
+    let empty_line = format!("│{}│", " ".repeat(banner_width - 2));
+    
     println!();
-    // Using IBM Carbon Design System color palette and typography principles
-    println!("{}", "┌─────────────────────────────────────────────────────────────────┐".blue());
-    println!("{}", "│                                                                 │".blue());
-    println!("│  {}  {}                                    │", "IBM Cloud".blue().bold(), "AI CLI".green().bold());
-    println!("{}", "│                                                                 │".blue());
-    println!("{}", "│  🤖 AI-Powered Command Line Assistant                          │".blue());
-    println!("{}", "│                                                                 │".blue());
-    println!("{}", "│  Features:                                                      │".blue());
-    println!("{}", "│  • 🚀 Natural language to IBM Cloud commands                   │".blue());
-    println!("{}", "│  • 🔧 Intelligent error handling & suggestions                 │".blue());
-    println!("{}", "│  • 📝 Interactive command editing (Esc to cancel)              │".blue());
-    println!("{}", "│  • ⬆️  Command history navigation (↑/↓ arrows)                  │".blue());
-    println!("{}", "│  • 🔐 Automatic login status verification                      │".blue());
-    println!("{}", "│                                                                 │".blue());
-    println!("│  {} {}                                        │", "v0.1.0".dimmed(), "• Powered by watsonx.ai".dimmed());
-    println!("{}", "└─────────────────────────────────────────────────────────────────┘".blue());
+    println!("{}", top_border.blue());
+    println!("{}", empty_line.blue());
+    
+    let title_line = format!("│  {}  {}{}│", 
+        "IBM Cloud".blue().bold(), 
+        "AI CLI".green().bold(),
+        " ".repeat(banner_width - 20));
+    println!("{}", title_line);
+    
+    println!("{}", empty_line.blue());
+    
+    let feature_lines = vec![
+        "🤖 AI-Powered Command Line Assistant",
+        "",
+        "Features:",
+        "• 🚀 Natural language to IBM Cloud commands",
+        "• 🔧 Intelligent error handling & suggestions", 
+        "• 📝 Interactive command editing (Esc to cancel)",
+        "• ⬆️  Command history navigation (↑/↓ arrows)",
+        "• 🔐 Automatic login status verification",
+        "",
+        "v0.1.0 • Powered by watsonx.ai"
+    ];
+    
+    for line in feature_lines {
+        if line.is_empty() {
+            println!("{}", empty_line.blue());
+        } else {
+            let content = if line.starts_with("v0.1.0") {
+                format!("│  {}{}│", line.dimmed(), " ".repeat(banner_width - line.len() - 4))
+            } else {
+                format!("│  {}{}│", line, " ".repeat(banner_width - line.len() - 4))
+            };
+            println!("{}", content.blue());
+        }
+    }
+    
+    println!("{}", empty_line.blue());
+    println!("{}", bottom_border.blue());
     println!();
     println!("{}", "💡 Tip: Type your request in natural language, or 'help' for commands".dimmed());
     println!();
@@ -189,14 +226,14 @@ async fn handle_edit_input(original_command: &str) -> Result<Option<String>> {
 }
 
 /// Execute a command with proper login checks and output handling
-async fn execute_command(command: &str) -> Result<()> {
+async fn execute_command(command: &str, rag_engine: &LocalRAGEngine, user_input: &str) -> Result<bool> {
     // Check login status before executing IBM Cloud commands
     if command.starts_with("ibmcloud") && !command.contains("login") {
         match ensure_login().await {
             Ok(_) => {},
             Err(e) => {
                 println!("{} {}: {}", "❌".red(), "Login required".red(), e);
-                return Ok(());
+                return Ok(false);
             }
         }
     }
@@ -222,8 +259,10 @@ async fn execute_command(command: &str) -> Result<()> {
         
         if status.success() {
             println!("{} {}", "✅".green(), "Command completed successfully".green());
+            return Ok(true);
         } else {
             println!("{} {}", "❌".red(), "Command failed".red());
+            return Ok(false);
         }
     } else {
         let output = if cfg!(target_os = "windows") {
@@ -246,16 +285,47 @@ async fn execute_command(command: &str) -> Result<()> {
         
         if !stderr.is_empty() {
             eprintln!("{}", stderr.red());
+            
+            // Check for known error patterns and suggest corrections
+             if stderr.contains("not registered") || stderr.contains("Unknown command") || stderr.contains("not found") || stderr.contains("not a registered command") {
+                 println!("{} {}", "💡".yellow(), "This looks like a command that might need correction.".yellow());
+                 
+                 // Special handling for plugin-related errors
+                 if stderr.contains("not a registered command") && stderr.contains("plug-ins") {
+                     println!("{} {}", "🔌".cyan(), "This appears to be a missing plugin. You may need to:".cyan());
+                     println!("{} {}", "  •".cyan(), "Install the required plugin with 'ibmcloud plugin install <plugin-name>'".cyan());
+                     println!("{} {}", "  •".cyan(), "Check available plugins with 'ibmcloud plugin repo-plugins'".cyan());
+                     println!("{} {}", "  •".cyan(), "Or use an alternative command that doesn't require plugins".cyan());
+                 }
+                 
+                 println!("{} {}", "📝".cyan(), "If you know the correct command, I can learn from this for future requests.".cyan());
+                
+                print!("{} ", "Enter the correct command (or press Enter to skip):".green().bold());
+                io::stdout().flush()?;
+                
+                let mut correction = String::new();
+                io::stdin().read_line(&mut correction)?;
+                let correction = correction.trim();
+                
+                if !correction.is_empty() {
+                    // Store the correction for future learning
+                    if let Err(e) = rag_engine.store_command_correction(user_input, command, correction).await {
+                        println!("{} {}: {}", "⚠️".yellow(), "Failed to store correction".yellow(), e);
+                    } else {
+                        println!("{} {}", "✅".green(), "Thank you! I'll remember this correction.".green());
+                    }
+                }
+            }
         }
         
         if !output.status.success() {
             println!("{} {}", "❌".red(), "Command failed".red());
+            return Ok(false);
         } else {
             println!("{} {}", "✅".green(), "Command executed successfully".green());
+            return Ok(true);
         }
     }
-    
-    Ok(())
 }
 
 /// Check if user is logged into IBM Cloud
@@ -393,8 +463,8 @@ async fn main() -> Result<()> {
         }
     }
     
-    // Create translator with enhanced error handling
-    let translator = CommandTranslator::new(watsonx);
+    // Create local RAG engine with file-based storage
+    let rag_engine = LocalRAGEngine::new(watsonx, "./rag_data.json").await?;
     
     // Initialize command history with Carbon-inspired UX
     let mut command_history: Vec<String> = Vec::new();
@@ -423,8 +493,11 @@ async fn main() -> Result<()> {
         
         if input.starts_with("exec ") {
             let command = input.trim_start_matches("exec ").trim();
-            if let Err(e) = execute_command(command).await {
-                println!("{} {}: {}", "❌".red(), "Execution error".red(), e);
+            match execute_command(command, &rag_engine, &input).await {
+                Ok(_) => {},
+                Err(e) => {
+                    println!("{} {}: {}", "❌".red(), "Execution error".red(), e);
+                }
             }
             continue;
         }
@@ -432,22 +505,58 @@ async fn main() -> Result<()> {
         // Enhanced translation with better user feedback
         println!("{} {}", "🤔".cyan(), "Processing with watsonx.ai...".cyan());
         
-        match translator.translate(&input).await {
+        match rag_engine.generate_with_context(&input).await {
             Ok(command) => {
                 // Carbon Design: Clear visual hierarchy and actionable information
                 println!();
                 println!("{} {}", "💡".green(), "Generated IBM Cloud CLI command:".green().bold());
-                println!("┌─────────────────────────────────────────────────────────────┐");
-                println!("│ {}                                                    │", 
-                    format!("{:<59}", command));
-                println!("└─────────────────────────────────────────────────────────────┘");
+                
+                // Responsive box sizing based on terminal width
+                let terminal_width = size().map(|(w, _)| w as usize).unwrap_or(80);
+                let max_box_width = terminal_width.saturating_sub(4);
+                let min_box_width = 50;
+                let preferred_width = std::cmp::max(command.len() + 4, min_box_width);
+                let box_width = std::cmp::min(preferred_width, max_box_width);
+                
+                let top_border = format!("┌{}┐", "─".repeat(box_width - 2));
+                let bottom_border = format!("└{}┘", "─".repeat(box_width - 2));
+                
+                println!("{}", top_border);
+                
+                // Handle long commands with proper text wrapping
+                let content_width = box_width - 4;
+                if command.len() <= content_width {
+                    println!("│ {} │", format!("{:<width$}", command, width = content_width));
+                } else {
+                    // Split long commands into multiple lines
+                    let mut remaining = command.as_str();
+                    while !remaining.is_empty() {
+                        let chunk_end = if remaining.len() <= content_width {
+                            remaining.len()
+                        } else {
+                            // Try to break at a space near the width limit
+                            remaining[..content_width]
+                                .rfind(' ')
+                                .unwrap_or(content_width)
+                        };
+                        
+                        let chunk = &remaining[..chunk_end];
+                        println!("│ {} │", format!("{:<width$}", chunk, width = content_width));
+                        remaining = &remaining[chunk_end..].trim_start();
+                    }
+                }
+                
+                println!("{}", bottom_border);
                 
                 // Enhanced command editing with better UX
                 match handle_edit_input(&command).await {
                     Ok(Some(final_command)) => {
-                        if let Err(e) = execute_command(&final_command).await {
-                            println!("{} {}: {}", "❌".red(), "Execution failed".red(), e);
-                            println!("{} {}", "💡".cyan(), "You can try modifying the command or ask for help".cyan());
+                        match execute_command(&final_command, &rag_engine, &input).await {
+                            Ok(_) => {},
+                            Err(e) => {
+                                println!("{} {}: {}", "❌".red(), "Execution failed".red(), e);
+                                println!("{} {}", "💡".cyan(), "You can try modifying the command or ask for help".cyan());
+                            }
                         }
                     }
                     Ok(None) => {

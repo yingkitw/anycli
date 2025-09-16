@@ -12,6 +12,10 @@ An AI-powered assistant for the IBM Cloud CLI that translates natural language q
 - **Interactive Command Support**: Automatically handles interactive commands like SSO login
 - **Login Status Check**: Automatically checks if you're logged into IBM Cloud before executing commands
 - **Professional Startup Banner**: Clean, informative banner displaying features and version info
+- **🧠 Intelligent Learning System**: AI-powered command learning that captures user corrections and improves suggestions over time
+- **🔌 Smart Plugin Error Handling**: Detects missing plugin errors and provides specific guidance for installation and alternatives
+- **📚 Local RAG Engine**: Enhanced knowledge base with IBM Cloud CLI documentation for better command suggestions
+- **💡 Interactive Error Recovery**: Intelligent error pattern recognition with contextual suggestions and learning capabilities
 
 ## Installation
 
@@ -63,6 +67,36 @@ ibmcloud-ai> list my code engine applications
 ibmcloud-ai> show me all my kubernetes clusters
 ibmcloud-ai> create a new resource group called my-project
 ibmcloud-ai> exec ibmcloud target --cf
+```
+
+## 🧠 Learning System
+
+The AI assistant now includes an intelligent learning system that improves over time:
+
+### Command Learning
+- **Error Correction Learning**: When commands fail, you can provide the correct command and the system learns from it
+- **Pattern Recognition**: The system identifies common error patterns and suggests fixes
+- **Contextual Suggestions**: Based on previous corrections, the system provides better command suggestions
+
+### Enhanced Error Handling
+- **Plugin Detection**: Automatically detects when commands fail due to missing plugins
+- **Installation Guidance**: Provides specific instructions for installing required plugins
+- **Alternative Suggestions**: Offers alternative commands that don't require plugins
+
+### Example Learning Interaction
+```
+ibmcloud-ai> list my databases
+❌ Command failed: 'dbs' is not a registered command. Check 'ibmcloud plugin list' for available plug-ins.
+
+🔌 This appears to be a missing plugin. You may need to:
+  • Install the required plugin with 'ibmcloud plugin install <plugin-name>'
+  • Check available plugins with 'ibmcloud plugin repo-plugins'
+  • Or use an alternative command that doesn't require plugins
+
+📝 If you know the correct command, I can learn from this for future requests.
+Enter the correct command (or press Enter to skip): ibmcloud resource service-instances --service-name databases-for-postgresql
+
+✅ Thanks! I've learned that 'list my databases' should be 'ibmcloud resource service-instances --service-name databases-for-postgresql'
 ```
 
 ## IBM Cloud CLI References

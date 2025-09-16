@@ -1,40 +1,81 @@
 use anyhow::Result;
 use crate::watsonx::WatsonxAI;
+use crate::rag::{RAGEngine, RAGConfig};
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 pub struct CommandTranslator {
     watsonx: WatsonxAI,
+    rag_engine: Option<Arc<Mutex<RAGEngine>>>,
+    rag_enabled: bool,
 }
 
 impl CommandTranslator {
     pub fn new(watsonx: WatsonxAI) -> Self {
-        Self { watsonx }
+        Self { 
+            watsonx,
+            rag_engine: None,
+            rag_enabled: false,
+        }
+    }
+    
+    /// Create a new CommandTranslator with RAG support
+    pub async fn with_rag(watsonx: WatsonxAI, qdrant_url: &str, collection_name: &str) -> Result<Self> {
+        let rag_engine = RAGEngine::new(qdrant_url, collection_name).await?;
+        
+        // Initialize RAG system
+        println!("🔧 Initializing RAG system for enhanced translations...");
+        rag_engine.initialize().await?;
+        
+        Ok(Self {
+            watsonx,
+            rag_engine: Some(Arc::new(Mutex::new(rag_engine))),
+            rag_enabled: true,
+        })
+    }
+    
+    /// Enable or disable RAG functionality
+    pub fn set_rag_enabled(&mut self, enabled: bool) {
+        self.rag_enabled = enabled && self.rag_engine.is_some();
+        println!("🔧 RAG functionality {}", if self.rag_enabled { "enabled" } else { "disabled" });
     }
 
     pub async fn translate(&self, query: &str) -> Result<String> {
-        // Enhanced prompt engineering following WatsonX best practices
-        let prompt = format!(
-            "You are an expert IBM Cloud CLI assistant powered by watsonx.ai. Your task is to translate natural language queries into precise IBM Cloud CLI commands.\n\n\
-            Query: {}\n\n\
-            Instructions:\n\
-            - Respond with ONLY the exact IBM Cloud command to run\n\
-            - No additional text, explanations, or markdown formatting\n\
-            - Commands must start with 'ibmcloud' and be syntactically correct\n\
-            - Use the most current IBM Cloud CLI syntax and conventions\n\
-            \n\
-            IBM Cloud CLI Reference Guide:\n\
-            • Resource management: 'ibmcloud resource service-instances [--service-name NAME]'\n\
-            • Service catalog: 'ibmcloud catalog service-marketplace'\n\
-            • Watson ML: 'ibmcloud resource service-instances --service-name watson-machine-learning'\n\
-            • Code Engine apps: 'ibmcloud ce app list'\n\
-            • Code Engine projects: 'ibmcloud ce project list'\n\
-            • Code Engine jobs: 'ibmcloud ce job list'\n\
-            • Code Engine builds: 'ibmcloud ce build list'\n\
-            • Authentication: 'ibmcloud login --sso' or 'ibmcloud login'\n\
-            • Target settings: 'ibmcloud target --cf' or 'ibmcloud target -g RESOURCE_GROUP'\n\
-            • Always use double dashes (--) for long options\n\
-            \n\
-            Generate the most appropriate command based on the query and these guidelines.",
+        println!("🔄 Translating query: {}", query);
+        
+        // Concise prompt for faster processing
+        let base_prompt = format!(
+            "Translate to IBM Cloud CLI command:\n\nQuery: {}\n\nCommand:",
             query
+        );
+        
+        // Enhance prompt with RAG context if available
+        let enhanced_prompt = if self.rag_enabled {
+            if let Some(rag_engine) = &self.rag_engine {
+                println!("🔍 Enhancing translation with RAG context...");
+                let rag_engine = rag_engine.lock().await;
+                match rag_engine.enhance_prompt(&base_prompt, query).await {
+                    Ok(enhanced) => {
+                        println!("✅ RAG context successfully integrated");
+                        enhanced
+                    }
+                    Err(e) => {
+                        println!("⚠️  RAG enhancement failed: {}, using base prompt", e);
+                        base_prompt
+                    }
+                }
+            } else {
+                base_prompt
+            }
+        } else {
+            base_prompt
+        };
+        
+        // Streamlined prompt with essential context only
+        let prompt = format!(
+            "{}\n\nRules: Return only the IBM Cloud CLI command, no explanations.\nExamples:\n- databases → ibmcloud resource service-instances --service-name databases-for-postgresql\n- watson services → ibmcloud resource service-instances --service-name watson\n- login → ibmcloud login --sso",
+            enhanced_prompt
         );
         
         // Enhanced generation with optimized parameters
@@ -42,8 +83,8 @@ impl CommandTranslator {
         let response = self.watsonx.watsonx_gen_with_timeout(
             &prompt, 
             model_id, 
-            150, // Reduced token count for more focused responses
-            std::time::Duration::from_secs(45) // Optimized timeout
+            100, // Further reduced for faster response
+            std::time::Duration::from_secs(30) // Shorter timeout for simpler prompt
         ).await?;
         
         // Improved command extraction with better validation
@@ -79,6 +120,8 @@ impl CommandTranslator {
             return Err(anyhow::anyhow!("Generated command does not start with 'ibmcloud': {}", command));
         }
         
+        println!("✅ Translation completed successfully{}", 
+            if self.rag_enabled { " with RAG enhancement" } else { "" });
         Ok(command)
     }
 }

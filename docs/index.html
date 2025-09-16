@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBM Cloud CLI AI</title>
+    <!-- Carbon Design System -->
+    <link rel="stylesheet" href="https://unpkg.com/carbon-components/css/carbon-components.min.css">
+    <script src="https://unpkg.com/carbon-components/scripts/carbon-components.min.js"></script>
+    <style>
+        :root {
+            --cds-interactive-01: #0f62fe;
+            --cds-interactive-02: #393939;
+            --cds-interactive-03: #0f62fe;
+            --cds-interactive-04: #0f62fe;
+        }
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #161616;
+        }
+        .bx--header {
+            background-color: #161616;
+            border-bottom: 1px solid #393939;
+        }
+        .bx--header__name {
+            font-weight: 600;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .hero {
+            background-color: #0f62fe;
+            color: white;
+            padding: 4rem 1rem;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .feature {
+            background-color: white;
+            border-radius: 4px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .feature h3 {
+            margin-top: 0;
+            color: #0f62fe;
+        }
+        .installation {
+            margin-top: 3rem;
+            background-color: white;
+            border-radius: 4px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .footer {
+            background-color: #161616;
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="bx--header" role="banner" aria-label="IBM Cloud CLI AI">
+        <a class="bx--header__name" href="/">
+            <span>IBM Cloud CLI AI</span>
+        </a>
+    </header>
+
+    <div class="hero">
+        <h1>IBM Cloud CLI AI</h1>
+        <p>An AI-powered assistant for the IBM Cloud CLI that translates natural language queries into IBM Cloud commands.</p>
+    </div>
+
+    <div class="container">
+        <div class="features">
+            <div class="feature">
+                <h3>Natural Language Processing</h3>
+                <p>Convert plain English requests into IBM Cloud CLI commands without memorizing complex syntax.</p>
+            </div>
+            <div class="feature">
+                <h3>Interactive Chat Mode</h3>
+                <p>Engage in a conversation-like interface with the CLI for a more intuitive experience.</p>
+            </div>
+            <div class="feature">
+                <h3>Command Editing</h3>
+                <p>Review and modify translated commands before execution to ensure they match your intent.</p>
+            </div>
+            <div class="feature">
+                <h3>Command Execution</h3>
+                <p>Run the commands directly from the interface with a simple confirmation.</p>
+            </div>
+        </div>
+
+        <div class="installation">
+            <h2>Installation</h2>
+            <ol>
+                <li>Clone the repository:
+                    <pre><code>git clone git@github.ibm.com:watsonx-apac/ibmcloud-cli-ai.git</code></pre>
+                </li>
+                <li>Create a <code>.env</code> file with your WatsonX API credentials:
+                    <pre><code>WATSONX_API_KEY=your_api_key
+WATSONX_PROJECT_ID=your_project_id</code></pre>
+                </li>
+                <li>Build the project:
+                    <pre><code>cargo build</code></pre>
+                </li>
+            </ol>
+        </div>
+
+        <div class="installation">
+            <h2>Usage</h2>
+            <h3>Ask a single question</h3>
+            <pre><code>cargo run -- ask "list all my code engine instances"</code></pre>
+
+            <h3>Start interactive chat mode</h3>
+            <pre><code>cargo run -- chat</code></pre>
+
+            <p>In chat mode:</p>
+            <ul>
+                <li>Type your query in natural language</li>
+                <li>The AI will translate it to an IBM Cloud command</li>
+                <li>Edit the command if needed or press Enter to execute</li>
+                <li>Type <code>exit</code> or <code>quit</code> to end the session</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Powered by Rust, WatsonX AI, and IBM Cloud CLI</p>
+    </footer>
+</body>
+</html>

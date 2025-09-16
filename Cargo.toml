@@ -1,0 +1,17 @@
+[package]
+name = "ibmcloud-cli-ai"
+version = "0.1.0"
+edition = "2021"
+description = "AI-powered IBM Cloud CLI that translates natural language to IBM Cloud commands"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+dotenv = "0.15"
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.32", features = ["full"] }
+colored = "2.0"
+regex = "1.9"
+futures = "0.3"

@@ -152,9 +152,30 @@ async fn main() -> Result<()> {
                 }
 
                 if confirm_execution(&command).await? {
-                    let success = execute_command(&command).await?;
+                    let result = execute_command(&command).await?;
                     
-                    if !success {
+                    if !result.success {
+                        // Get AI-powered recovery suggestion
+                        println!("\n{} Getting AI suggestion for recovery...", "🤖".cyan());
+                        
+                        let error_msg = if !result.stderr.is_empty() {
+                            result.stderr.clone()
+                        } else {
+                            "Command failed with no error message".to_string()
+                        };
+                        
+                        match translator.suggest_recovery(&input, &command, &error_msg).await {
+                            Ok(suggestion) => {
+                                println!("\n{} AI Suggestion:", "💡".green().bold());
+                                println!("{}", suggestion);
+                                println!();
+                            }
+                            Err(e) => {
+                                eprintln!("{} Failed to get AI suggestion: {}", "⚠️".yellow(), e);
+                            }
+                        }
+                        
+                        // Still offer manual learning
                         handle_learning(&input, &command, &mut learning_engine).await?;
                     }
                 }

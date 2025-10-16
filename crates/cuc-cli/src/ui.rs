@@ -181,8 +181,15 @@ pub async fn confirm_execution(_command: &str) -> Result<bool> {
     Ok(response.is_empty() || response == "y" || response == "yes")
 }
 
-/// Execute a shell command and return success status
-pub async fn execute_command(command: &str) -> Result<bool> {
+/// Result of command execution
+pub struct CommandResult {
+    pub success: bool,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+/// Execute a shell command and return detailed result
+pub async fn execute_command(command: &str) -> Result<CommandResult> {
     println!("{} Executing...", "🚀".yellow());
 
     let output = if cfg!(target_os = "windows") {
@@ -191,8 +198,8 @@ pub async fn execute_command(command: &str) -> Result<bool> {
         Command::new("sh").arg("-c").arg(command).output()?
     };
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     if !stdout.is_empty() {
         println!("{}", stdout);
@@ -202,13 +209,18 @@ pub async fn execute_command(command: &str) -> Result<bool> {
         eprintln!("{}", stderr.red());
     }
 
-    if output.status.success() {
+    let success = output.status.success();
+    if success {
         println!("{} Command executed successfully", "✅".green());
-        Ok(true)
     } else {
         println!("{} Command failed", "❌".red());
-        Ok(false)
     }
+
+    Ok(CommandResult {
+        success,
+        stdout,
+        stderr,
+    })
 }
 
 /// Handle learning from failed commands

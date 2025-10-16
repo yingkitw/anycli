@@ -39,10 +39,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 
 ### AI-Powered Features
 - **🧠 Intelligent Learning System**: AI-powered command learning that captures user corrections and improves suggestions over time
-- **🔌 Smart Plugin Error Handling**: Detects missing plugin errors and provides specific guidance for installation and alternatives
-- **📚 Local RAG Engine**: Enhanced knowledge base with cloud CLI documentation for better command suggestions
-- **💡 Interactive Error Recovery**: Intelligent error pattern recognition with contextual suggestions and learning capabilities
-- **🔧 Robust WatsonX Integration**: Improved API response handling with enhanced prompt engineering and error recovery
+- **📊 Quality Analysis**: Automatic assessment of generated commands with quality scores and issue detection
+- **🔍 Context-Aware Translation**: Uses RAG (Retrieval-Augmented Generation) to provide accurate command translations based on documentation
+- **🔧 AI Error Recovery**: When commands fail, automatically sends the error to WatsonX AI to get intelligent suggestions for next steps and fixes
 - **⚡ Pipeline Input Support**: Seamlessly handles both interactive and pipeline input modes for automation workflows
 
 ### Technical Features

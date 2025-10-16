@@ -67,6 +67,52 @@ impl<L: LLMProvider, R: RAGEngine> CommandTranslator<L, R> {
     pub fn has_rag(&self) -> bool {
         self.rag.as_ref().map_or(false, |r| r.is_ready())
     }
+
+    /// Suggest recovery steps for a failed command
+    /// 
+    /// # Arguments
+    /// * `original_query` - The user's original natural language query
+    /// * `failed_command` - The command that failed
+    /// * `error_message` - The error message from the failed command
+    /// 
+    /// # Returns
+    /// A suggested next step or corrected command
+    pub async fn suggest_recovery(
+        &self,
+        original_query: &str,
+        failed_command: &str,
+        error_message: &str,
+    ) -> Result<String> {
+        let prompt = format!(
+            "You are an expert in cloud CLI troubleshooting. A user tried to execute a command but it failed.\n\
+            \n\
+            Original Intent: {}\n\
+            Failed Command: {}\n\
+            Error Message: {}\n\
+            \n\
+            Analyze the error and provide:\n\
+            1. A brief explanation of what went wrong (1-2 sentences)\n\
+            2. The corrected command or next step to fix the issue\n\
+            \n\
+            Format your response as:\n\
+            Explanation: [your explanation]\n\
+            Suggested Command: [the corrected command or next step]\n\
+            \n\
+            Be concise and practical.",
+            original_query,
+            failed_command,
+            error_message
+        );
+
+        let config = GenerationConfig {
+            model_id: self.llm.model_id().to_string(),
+            max_tokens: 300,
+            ..Default::default()
+        };
+
+        let result = self.llm.generate_with_config(&prompt, &config).await?;
+        Ok(result.text)
+    }
 }
 
 #[cfg(test)]

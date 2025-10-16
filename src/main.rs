@@ -1,32 +1,58 @@
 use anyhow::Result;
 use clap::Parser;
 use colored::*;
-use std::process::Command;
-use std::io::{self, Write};
 use std::sync::Arc;
 
 // Import from our modular crates
-use cuc_core::{LLMProvider, RAGEngine, RAGQuery};
+use cuc_core::{LLMProvider, RAGEngine, VectorStore, CloudProviderType, detect_provider_from_query};
 use cuc_watsonx::WatsonxClient;
 use cuc_rag::{LocalVectorStore, LocalDocumentIndexer, LocalRAGEngine};
 use cuc_cli::{
     CommandTranslator, CommandLearningEngine, QualityAnalyzer,
-    display_banner, handle_input_with_history,
+    display_banner, handle_input_with_history, print_help,
+    confirm_execution, execute_command, handle_learning,
 };
 
 #[derive(Parser)]
-#[command(name = "icx")]
-#[command(about = "AI-powered IBM Cloud CLI assistant", long_about = None)]
+#[command(name = "cuc")]
+#[command(about = "AI-powered Cloud Universal CLI assistant", long_about = None)]
 struct Cli {
     /// Direct command to execute
     #[arg(short, long)]
     command: Option<String>,
+    
+    /// Cloud provider (ibmcloud, aws, gcp, azure)
+    #[arg(short, long)]
+    provider: Option<String>,
+    
+    /// List supported cloud providers
+    #[arg(long)]
+    list_providers: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     let cli = Cli::parse();
+
+    // Handle list providers command
+    if cli.list_providers {
+        println!("{}", "Supported Cloud Providers:".bold());
+        for provider in CloudProviderType::all() {
+            println!("  {} - {}", provider.cli_command().green(), provider.display_name());
+        }
+        return Ok(());
+    }
+
+    // Parse cloud provider if specified
+    let default_provider = if let Some(ref provider_str) = cli.provider {
+        CloudProviderType::from_str(provider_str)
+            .ok_or_else(|| anyhow::anyhow!("Unknown cloud provider: {}", provider_str))?
+    } else {
+        CloudProviderType::IBMCloud // Default to IBM Cloud for now
+    };
+
+    println!("{} Default provider: {}", "ℹ️".cyan(), default_provider);
 
     // Initialize components
     let mut watsonx = WatsonxClient::from_env()?;
@@ -47,7 +73,7 @@ async fn main() -> Result<()> {
     }
 
     let translator = CommandTranslator::with_rag(watsonx, rag_engine);
-    let learning_engine = CommandLearningEngine::new("command_corrections.json")?;
+    let mut learning_engine = CommandLearningEngine::new("command_corrections.json")?;
     let quality_analyzer = QualityAnalyzer::new();
 
     // Handle direct command execution
@@ -99,8 +125,18 @@ async fn main() -> Result<()> {
             continue;
         }
 
+        // Detect cloud provider from query
+        let detected_provider = detect_provider_from_query(&input);
+        let active_provider = if let Some(detection) = detected_provider {
+            println!("{} Detected provider: {} (confidence: {:.0}%)", 
+                "🔍".cyan(), detection.provider, detection.confidence * 100.0);
+            detection.provider
+        } else {
+            default_provider
+        };
+
         // Translate natural language to command
-        println!("{} Translating...", "🤖".blue());
+        println!("{} Translating for {}...", "🤖".blue(), active_provider);
         
         match translator.translate(&input).await {
             Ok(command) => {
@@ -119,7 +155,7 @@ async fn main() -> Result<()> {
                     let success = execute_command(&command).await?;
                     
                     if !success {
-                        offer_correction(&input, &command, &learning_engine).await?;
+                        handle_learning(&input, &command, &mut learning_engine).await?;
                     }
                 }
             }
@@ -132,81 +168,3 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn print_help() {
-    println!("{}", "Available commands:".bold());
-    println!("  {} - Type natural language queries to translate to IBM Cloud commands", "query".green());
-    println!("  {} - Execute a command directly", "exec <command>".green());
-    println!("  {} - Show this help message", "help".green());
-    println!("  {} - Exit the application", "exit/quit".green());
-    println!();
-    println!("{}", "Examples:".bold());
-    println!("  list my resource groups");
-    println!("  show all kubernetes clusters");
-    println!("  exec ibmcloud target --cf");
-}
-
-async fn confirm_execution(command: &str) -> Result<bool> {
-    print!("{} Execute this command? [Y/n]: ", "❓".cyan());
-    io::stdout().flush()?;
-
-    let mut response = String::new();
-    io::stdin().read_line(&mut response)?;
-    let response = response.trim().to_lowercase();
-
-    Ok(response.is_empty() || response == "y" || response == "yes")
-}
-
-async fn execute_command(command: &str) -> Result<bool> {
-    println!("{} Executing...", "🚀".yellow());
-
-    let output = if cfg!(target_os = "windows") {
-        Command::new("cmd").args(["/C", command]).output()?
-    } else {
-        Command::new("sh").arg("-c").arg(command).output()?
-    };
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
-
-    if !stdout.is_empty() {
-        println!("{}", stdout);
-    }
-
-    if !stderr.is_empty() {
-        eprintln!("{}", stderr.red());
-    }
-
-    if output.status.success() {
-        println!("{} Command executed successfully", "✅".green());
-        Ok(true)
-    } else {
-        println!("{} Command failed", "❌".red());
-        Ok(false)
-    }
-}
-
-async fn offer_correction(
-    query: &str,
-    failed_command: &str,
-    learning_engine: &CommandLearningEngine,
-) -> Result<()> {
-    println!("{} Would you like to provide the correct command?", "📝".cyan());
-    print!("Correct command (or press Enter to skip): ");
-    io::stdout().flush()?;
-
-    let mut correction = String::new();
-    io::stdin().read_line(&mut correction)?;
-    let correction = correction.trim();
-
-    if !correction.is_empty() {
-        let mut engine = learning_engine.clone();
-        engine.add_correction(
-            query.to_string(),
-            correction.to_string(),
-            Some(format!("Failed command: {}", failed_command)),
-        ).await?;
-        println!("{} Thanks! I'll remember this.", "✅".green());
-    }
-
-    Ok(())
-}

@@ -11,7 +11,10 @@ mod tests;
 pub use translator::CommandTranslator;
 pub use command_learning::{CommandLearningEngine, CorrectionType};
 pub use quality_analyzer::QualityAnalyzer;
-pub use ui::{display_banner, handle_input_with_history};
+pub use ui::{
+    display_banner, handle_input_with_history, print_help,
+    confirm_execution, execute_command, handle_learning,
+};
 
 // Re-export core types
 pub use cuc_core::{Error, Result};

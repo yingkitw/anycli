@@ -1,6 +1,6 @@
-# IBM Cloud CLI AI (icx)
+# CUC (Cloud Universal CLI)
 
-An AI-powered assistant for the IBM Cloud CLI that translates natural language queries into IBM Cloud commands using WatsonX AI.
+An AI-powered universal CLI assistant that translates natural language queries into cloud commands using WatsonX AI. Supports multiple cloud providers including IBM Cloud, AWS, GCP, Azure, and VMware vSphere.
 
 ## Architecture
 
@@ -9,12 +9,17 @@ Built with **Rust 2024** and a modular, trait-based architecture for maximum tes
 ### Workspace Structure
 
 ```
-ibmcloud-cli-ai/
+cuc/
 ├── crates/
-│   ├── core/           # Core traits and types
-│   ├── watsonx/        # WatsonX AI integration
-│   ├── rag/            # RAG engine and vector stores
-│   └── cli/            # CLI interface utilities
+│   ├── cuc-core/       # Core traits and types
+│   ├── cuc-watsonx/    # WatsonX AI integration
+│   ├── cuc-rag/        # RAG engine and vector stores
+│   ├── cuc-cli/        # CLI interface utilities
+│   ├── cuc-ibmcloud/   # IBM Cloud provider
+│   ├── cuc-aws/        # AWS provider
+│   ├── cuc-gcp/        # GCP provider
+│   ├── cuc-azure/      # Azure provider
+│   └── cuc-vmware/     # VMware vSphere provider
 └── src/                # Main binary
 ```
 
@@ -23,18 +28,19 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 ## Features
 
 ### Core Capabilities
-- **Natural Language Processing**: Convert plain English requests into IBM Cloud CLI commands
+- **Multi-Cloud Support**: Unified interface for IBM Cloud, AWS, GCP, Azure, and VMware CLIs
+- **Natural Language Processing**: Convert plain English requests into cloud CLI commands
 - **Interactive Chat Mode**: Engage in a conversation-like interface with the CLI
 - **Enhanced Command Editing**: Review and modify translated commands before execution with Esc to cancel
 - **Command History Navigation**: Use ↑/↓ arrow keys to navigate through previous commands
 - **Command Execution**: Run the commands directly from the interface
 - **Interactive Command Support**: Automatically handles interactive commands like SSO login
-- **Login Status Check**: Automatically checks if you're logged into IBM Cloud before executing commands
+- **Login Status Check**: Automatically checks if you're logged in before executing commands
 
 ### AI-Powered Features
 - **🧠 Intelligent Learning System**: AI-powered command learning that captures user corrections and improves suggestions over time
 - **🔌 Smart Plugin Error Handling**: Detects missing plugin errors and provides specific guidance for installation and alternatives
-- **📚 Local RAG Engine**: Enhanced knowledge base with IBM Cloud CLI documentation for better command suggestions
+- **📚 Local RAG Engine**: Enhanced knowledge base with cloud CLI documentation for better command suggestions
 - **💡 Interactive Error Recovery**: Intelligent error pattern recognition with contextual suggestions and learning capabilities
 - **🔧 Robust WatsonX Integration**: Improved API response handling with enhanced prompt engineering and error recovery
 - **⚡ Pipeline Input Support**: Seamlessly handles both interactive and pipeline input modes for automation workflows
@@ -64,7 +70,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 Simply run the CLI to start the interactive chat mode:
 
 ```
-icx
+cuc
 ```
 
 In chat mode:
@@ -90,11 +96,39 @@ In chat mode:
 
 ### Examples
 
+**IBM Cloud:**
 ```
-ibmcloud-ai> list my code engine applications
-ibmcloud-ai> show me all my kubernetes clusters
-ibmcloud-ai> create a new resource group called my-project
-ibmcloud-ai> exec ibmcloud target --cf
+cuc> list my code engine applications
+cuc> show me all my kubernetes clusters
+cuc> create a new resource group called my-project
+```
+
+**AWS:**
+```
+cuc> list all my ec2 instances
+cuc> show s3 buckets in us-east-1
+cuc> create a lambda function
+```
+
+**GCP:**
+```
+cuc> list compute instances
+cuc> show all cloud storage buckets
+cuc> create a new gke cluster
+```
+
+**Azure:**
+```
+cuc> list virtual machines
+cuc> show storage accounts
+cuc> create a resource group
+```
+
+**VMware vSphere:**
+```
+cuc> list all vms
+cuc> show esxi hosts
+cuc> power on virtual machine
 ```
 
 ## 🧠 Learning System
@@ -113,7 +147,7 @@ The AI assistant now includes an intelligent learning system that improves over 
 
 ### Example Learning Interaction
 ```
-ibmcloud-ai> list my databases
+cuc> list my databases
 ❌ Command failed: 'dbs' is not a registered command. Check 'ibmcloud plugin list' for available plug-ins.
 
 🔌 This appears to be a missing plugin. You may need to:
@@ -146,20 +180,43 @@ Recent updates have significantly improved the reliability and accuracy of the W
 ### Usage Examples with Pipeline Input
 ```bash
 # Pipeline input for automation
-echo "list all resource groups" | icx
-echo "show me all wml instances" | icx
+echo "list all resource groups" | cuc
+echo "show me all wml instances" | cuc
 
 # Interactive mode
-icx
+cuc
 ```
 
-## IBM Cloud CLI References
+## Cloud CLI References
 
+### IBM Cloud
 - [IBM Cloud CLI](https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_cli)
 - [Resource Management](https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_commands_resource)
 - [IAM Commands](https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_commands_iam)
 - [Kubernetes Service](https://cloud.ibm.com/docs/cli?topic=cli-kubernetes-service-cli)
-- [Catalog Management](https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_catalog)
+
+### AWS
+- [AWS CLI](https://aws.amazon.com/cli/)
+- [AWS CLI Command Reference](https://docs.aws.amazon.com/cli/latest/reference/)
+- [EC2 Commands](https://docs.aws.amazon.com/cli/latest/reference/ec2/)
+- [S3 Commands](https://docs.aws.amazon.com/cli/latest/reference/s3/)
+
+### GCP
+- [gcloud CLI](https://cloud.google.com/sdk/gcloud)
+- [gcloud Reference](https://cloud.google.com/sdk/gcloud/reference)
+- [Compute Commands](https://cloud.google.com/sdk/gcloud/reference/compute)
+- [Storage Commands](https://cloud.google.com/sdk/gcloud/reference/storage)
+
+### Azure
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/)
+- [Azure CLI Reference](https://docs.microsoft.com/en-us/cli/azure/reference-index)
+- [VM Commands](https://docs.microsoft.com/en-us/cli/azure/vm)
+- [Storage Commands](https://docs.microsoft.com/en-us/cli/azure/storage)
+
+### VMware
+- [govc (vSphere CLI)](https://github.com/vmware/govmomi/tree/master/govc)
+- [VMware Cloud CLI](https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-3B6C0A9E-4F5E-4D8D-9F5E-0F6F5E5E5E5E.html)
+- [vSphere CLI Reference](https://github.com/vmware/govmomi/blob/master/govc/USAGE.md)
 
 ## Development
 
@@ -187,10 +244,10 @@ cargo check --workspace
 
 ### Project Structure
 
-- **`crates/core`**: Core traits and types (`LLMProvider`, `RAGEngine`, `VectorStore`, `DocumentIndexer`)
-- **`crates/watsonx`**: WatsonX AI client implementation
-- **`crates/rag`**: RAG engine, vector stores, and document indexers
-- **`crates/cli`**: CLI utilities (translator, learning engine, quality analyzer)
+- **`crates/cuc-core`**: Core traits and types (`LLMProvider`, `RAGEngine`, `VectorStore`, `DocumentIndexer`)
+- **`crates/cuc-watsonx`**: WatsonX AI client implementation
+- **`crates/cuc-rag`**: RAG engine, vector stores, and document indexers
+- **`crates/cuc-cli`**: CLI utilities (translator, learning engine, quality analyzer)
 
 ### Adding a New LLM Provider
 
@@ -200,7 +257,7 @@ cargo check --workspace
 
 Example:
 ```rust
-use ibmcloud_cli_ai_core::{LLMProvider, GenerationConfig, GenerationResult};
+use cuc_core::{LLMProvider, GenerationConfig, GenerationResult};
 use async_trait::async_trait;
 
 pub struct MyLLMProvider {

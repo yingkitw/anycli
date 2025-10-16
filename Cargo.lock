@@ -457,6 +457,62 @@ dependencies = [
 ]
 
 [[package]]
+name = "cuc"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64",
+ "chrono",
+ "clap",
+ "colored",
+ "crossterm",
+ "cuc-cli",
+ "cuc-core",
+ "cuc-rag",
+ "cuc-watsonx",
+ "dotenvy",
+ "futures",
+ "insta",
+ "md5",
+ "qdrant-client",
+ "regex",
+ "reqwest",
+ "scraper",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "cuc-aws"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cuc-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "cuc-azure"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cuc-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
 name = "cuc-cli"
 version = "0.1.0"
 dependencies = [
@@ -492,6 +548,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "cuc-gcp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cuc-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "cuc-ibmcloud"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cuc-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
 name = "cuc-rag"
 version = "0.1.0"
 dependencies = [
@@ -513,6 +595,19 @@ dependencies = [
  "tokio",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "cuc-vmware"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cuc-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-test",
 ]
 
 [[package]]
@@ -1117,36 +1212,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
 dependencies = [
  "cc",
-]
-
-[[package]]
-name = "ibmcloud-cli-ai"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64",
- "chrono",
- "clap",
- "colored",
- "crossterm",
- "cuc-cli",
- "cuc-core",
- "cuc-rag",
- "cuc-watsonx",
- "dotenvy",
- "futures",
- "insta",
- "md5",
- "qdrant-client",
- "regex",
- "reqwest",
- "scraper",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "url",
- "uuid",
 ]
 
 [[package]]
@@ -2672,6 +2737,19 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+]
+
+[[package]]
+name = "tokio-test"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2468baabc3311435b55dd935f702f42cd1b8abb7e754fb7dfb16bd36aa88f9f7"
+dependencies = [
+ "async-stream",
+ "bytes",
+ "futures-core",
+ "tokio",
+ "tokio-stream",
 ]
 
 [[package]]

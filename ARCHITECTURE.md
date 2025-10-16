@@ -2,7 +2,7 @@
 
 ## Overview
 
-IBM Cloud CLI AI is a modular, trait-based Rust application that translates natural language queries into IBM Cloud CLI commands using WatsonX AI and RAG (Retrieval-Augmented Generation).
+CUC (Cloud Universal CLI) is a modular, trait-based Rust application that translates natural language queries into cloud CLI commands using WatsonX AI and RAG (Retrieval-Augmented Generation). It provides a unified interface for multiple cloud providers including IBM Cloud, AWS, GCP, Azure, and VMware vSphere.
 
 ## Rust Edition
 
@@ -14,19 +14,24 @@ IBM Cloud CLI AI is a modular, trait-based Rust application that translates natu
 The project is organized as a Cargo workspace with multiple crates:
 
 ```
-ibmcloud-cli-ai/
+cuc/
 ├── crates/
-│   ├── core/           # Core traits and types
-│   ├── watsonx/        # WatsonX AI integration
-│   ├── rag/            # RAG engine, vector stores, document indexers
-│   └── cli/            # CLI interface and utilities
+│   ├── cuc-core/       # Core traits and types
+│   ├── cuc-watsonx/    # WatsonX AI integration
+│   ├── cuc-rag/        # RAG engine, vector stores, document indexers
+│   ├── cuc-cli/        # CLI interface and utilities
+│   ├── cuc-ibmcloud/   # IBM Cloud provider implementation
+│   ├── cuc-aws/        # AWS provider implementation
+│   ├── cuc-gcp/        # GCP provider implementation
+│   ├── cuc-azure/      # Azure provider implementation
+│   └── cuc-vmware/     # VMware vSphere provider implementation
 ├── src/                # Main binary
 └── Cargo.toml          # Workspace configuration
 ```
 
 ## Crate Descriptions
 
-### `ibmcloud-cli-ai-core`
+### `cuc-core`
 
 The core crate defines fundamental traits and types used across the system:
 
@@ -35,6 +40,7 @@ The core crate defines fundamental traits and types used across the system:
   - `RAGEngine`: Interface for Retrieval-Augmented Generation engines
   - `VectorStore`: Interface for vector database operations
   - `DocumentIndexer`: Interface for document indexing
+  - `CloudProvider`: Interface for cloud-specific command translation (future)
 
 - **Types**:
   - `Error` and `Result`: Custom error handling
@@ -42,8 +48,9 @@ The core crate defines fundamental traits and types used across the system:
   - `RAGQuery`, `RAGResult`: RAG query types
   - `VectorDocument`, `SearchConfig`: Vector store types
   - `Document`, `IndexingConfig`: Document indexer types
+  - `CloudProviderType`: Enum for supported cloud providers
 
-### `ibmcloud-cli-ai-watsonx`
+### `cuc-watsonx`
 
 WatsonX AI integration crate:
 
@@ -55,7 +62,7 @@ WatsonX AI integration crate:
   - Retry logic with quality assessment
   - Feedback-based prompt enhancement
 
-### `ibmcloud-cli-ai-rag`
+### `cuc-rag`
 
 RAG engine and supporting components:
 
@@ -65,7 +72,7 @@ RAG engine and supporting components:
 - **`LocalDocumentIndexer`**: Document indexing with chunking
 - **`WebDocumentIndexer`**: Web scraping and indexing (future)
 
-### `ibmcloud-cli-ai-cli`
+### `cuc-cli`
 
 CLI interface and utilities:
 
@@ -73,6 +80,40 @@ CLI interface and utilities:
 - **`CommandLearningEngine`**: Learns from user corrections
 - **`QualityAnalyzer`**: Assesses command quality
 - **`UI utilities`**: Banner display, input handling
+
+### Cloud Provider Crates
+
+Each cloud provider has its own dedicated crate implementing the `CloudProvider` trait:
+
+#### `cuc-ibmcloud`
+- IBM Cloud CLI (`ibmcloud`) integration
+- Resource management, Kubernetes, Code Engine, Cloud Foundry
+- Authentication status checking
+- Provider-specific RAG context
+
+#### `cuc-aws`
+- AWS CLI (`aws`) integration
+- EC2, S3, Lambda, EKS operations
+- AWS STS authentication checking
+- Provider-specific command patterns
+
+#### `cuc-gcp`
+- Google Cloud CLI (`gcloud`) integration
+- Compute Engine, Cloud Storage, GKE, Cloud Functions
+- GCP auth status checking
+- Provider-specific command validation
+
+#### `cuc-azure`
+- Azure CLI (`az`) integration
+- Virtual Machines, Storage Accounts, AKS, Functions
+- Azure account authentication checking
+- Provider-specific command patterns
+
+#### `cuc-vmware`
+- VMware vSphere CLI (`govc`) integration
+- VM management, ESXi hosts, vCenter operations
+- vSphere authentication checking
+- Provider-specific command patterns
 
 ## Design Principles
 
@@ -164,11 +205,69 @@ Custom error types defined in `core::Error`:
 - `Network`: Network errors
 - `Timeout`: Timeout errors
 
+## Multi-Cloud Architecture
+
+### Cloud Provider Support
+
+CUC supports multiple cloud providers through a unified translation layer:
+
+```
+User Query (Natural Language)
+    ↓
+Cloud Provider Detection (auto or explicit)
+    ↓
+Provider-Specific RAG Context
+    ↓
+LLM Translation (with provider context)
+    ↓
+Provider-Specific Command
+```
+
+### Supported Cloud Providers
+
+1. **IBM Cloud** (`ibmcloud`)
+   - Resource management
+   - Kubernetes clusters
+   - Cloud Foundry
+   - Watson services
+
+2. **AWS** (`aws`)
+   - EC2 instances
+   - S3 storage
+   - Lambda functions
+   - EKS clusters
+
+3. **GCP** (`gcloud`)
+   - Compute Engine
+   - Cloud Storage
+   - GKE clusters
+   - Cloud Functions
+
+4. **Azure** (`az`)
+   - Virtual Machines
+   - Storage Accounts
+   - AKS clusters
+   - Azure Functions
+
+5. **VMware vSphere** (`govc`)
+   - Virtual Machines
+   - ESXi Hosts
+   - vCenter management
+   - Datastores and networks
+
+### Provider Detection
+
+- **Automatic**: Based on installed CLIs and context keywords
+- **Explicit**: User can specify provider with flags or commands
+- **Default**: Configurable default provider in settings
+
 ## Future Enhancements
 
 1. **Additional LLM Providers**: OpenAI, Anthropic, etc.
 2. **Qdrant Integration**: Full Qdrant vector store support
-3. **Web Scraping**: Complete web document indexer
+3. **Web Scraping**: Complete web document indexer for cloud docs
 4. **Embeddings**: Add embedding generation for better RAG
-5. **Caching**: Cache frequently used commands
+5. **Caching**: Cache frequently used commands per provider
 6. **Telemetry**: Add observability and metrics
+7. **Provider-Specific RAG**: Separate knowledge bases per cloud
+8. **Cross-Cloud Operations**: Translate commands across providers

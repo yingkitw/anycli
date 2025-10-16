@@ -1,4 +1,4 @@
-# TODO
+# TODO - CUC (Cloud Universal CLI)
 
 ## Completed ✅
 
@@ -14,13 +14,30 @@
 - [x] Add insta for snapshot testing
 - [x] Ensure cargo build success
 - [x] Update documentation (README.md, ARCHITECTURE.md, TODO.md)
+- [x] Rename program to CUC (Cloud Universal CLI)
+- [x] Migrate all capabilities from src/ to crates/
+- [x] Delete legacy folder after migration
+- [x] Simplify main.rs to only orchestration logic
+- [x] Add multi-cloud provider abstraction (AWS, GCP, Azure, IBM Cloud, VMware)
+- [x] Implement cloud provider detection from queries
+- [x] Add CLI flags for provider selection
+- [x] Create separate crates for each cloud provider
+- [x] Implement CloudProvider trait for all 5 providers
+- [x] Add provider-specific RAG context and command validation
 
 ## In Progress 🚧
 
+- [ ] Implement provider-specific RAG knowledge bases
+- [ ] Add AWS CLI command translation
+- [ ] Add GCP CLI command translation
+- [ ] Add Azure CLI command translation
+- [ ] Add VMware vSphere CLI command translation
 - [ ] Fix remaining compiler warnings
-- [ ] Add comprehensive unit tests for all crates
+- [x] Add comprehensive unit tests for all crates (51+ tests)
+- [x] Improve test coverage for cloud providers
+- [x] Add tests for provider configurations
 - [ ] Add integration tests
-- [ ] Create snapshot tests with insta
+- [x] Create snapshot tests with insta
 
 ## High Priority 🔴
 
@@ -47,13 +64,23 @@
 
 ## Medium Priority 🟡
 
+### Multi-Cloud Features
+- [ ] Implement CloudProvider trait for each provider
+- [ ] Add provider-specific command validation
+- [ ] Create separate RAG knowledge bases per cloud
+- [ ] Add CLI installation detection per provider
+- [ ] Add authentication status check per provider
+- [ ] Implement cross-cloud command translation
+- [ ] Add provider-specific error handling
+
 ### Features
 - [ ] Implement Qdrant vector store integration
-- [ ] Implement web document scraper
+- [ ] Implement web document scraper for cloud docs
 - [ ] Add embedding generation for better RAG
-- [ ] Add command caching
+- [ ] Add command caching per provider
 - [ ] Add telemetry and metrics
 - [ ] Add configuration file support (beyond .env)
+- [ ] Add provider preference persistence
 
 ### Improvements
 - [ ] Improve error messages
@@ -81,6 +108,11 @@
 - [ ] Add Weaviate integration
 - [ ] Add Milvus integration
 
+### Additional CLI Support
+- [ ] Add Kubernetes CLI support (kubectl)
+- [ ] Add Terraform CLI support
+- [ ] Add Docker CLI support
+
 ### Platform Support
 - [ ] Test on Windows
 - [ ] Test on Linux
@@ -96,14 +128,32 @@
 
 ## Technical Debt 💳
 
-- [ ] Remove deprecated qdrant-client usage in old code
 - [ ] Clean up unused imports
-- [ ] Refactor main.rs to use new modular structure
-- [ ] Remove old implementation files after migration
 - [ ] Consolidate error handling patterns
 - [ ] Improve async/await usage patterns
+- [ ] Fix non-deterministic snapshot test ordering (HashMap iteration order)
 
 ## Notes 📝
+
+### Program Name
+- **CUC**: Cloud Universal CLI
+- Renamed from "IBM Cloud CLI AI (icx)" to support universal cloud CLI operations
+- Binary name changed from `icx` to `cuc`
+- Package name changed from `ibmcloud-cli-ai` to `cuc`
+
+### Multi-Cloud Support
+- **Supported Providers**: IBM Cloud, AWS, GCP, Azure, VMware vSphere
+- **Provider Detection**: Automatic detection from query keywords
+- **CLI Flags**: `--provider` to specify provider, `--list-providers` to see all
+- **Default Provider**: IBM Cloud (configurable)
+- **VMware CLI**: Uses `govc` (vSphere CLI) for VMware operations
+- **Provider Crates**: Each provider has its own crate implementing `CloudProvider` trait
+  - `cuc-ibmcloud`: IBM Cloud provider
+  - `cuc-aws`: AWS provider
+  - `cuc-gcp`: GCP provider
+  - `cuc-azure`: Azure provider
+  - `cuc-vmware`: VMware vSphere provider
+- **Features**: CLI detection, authentication checking, command validation, RAG context
 
 ### Migration Strategy
 1. Keep old implementation in src/ for reference

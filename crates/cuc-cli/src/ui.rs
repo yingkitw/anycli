@@ -6,7 +6,9 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, size},
 };
 use std::io::{self, Write, IsTerminal};
+use std::process::Command;
 use cuc_core::Result;
+use crate::CommandLearningEngine;
 
 /// Display startup banner with Carbon Design System inspired styling
 pub fn display_banner() {
@@ -22,20 +24,19 @@ pub fn display_banner() {
     println!("{}", empty_line.blue());
 
     let title_line = format!(
-        "│  {}  {}{}│",
-        "IBM Cloud".blue().bold(),
-        "AI CLI".green().bold(),
-        " ".repeat(banner_width - 20)
+        "│  {}{}│",
+        "CUC - Cloud Universal CLI".blue().bold(),
+        " ".repeat(banner_width - 28)
     );
     println!("{}", title_line);
 
     println!("{}", empty_line.blue());
 
     let feature_lines = vec![
-        "🤖 AI-Powered Command Line Assistant",
+        "🤖 AI-Powered Universal CLI Assistant",
         "",
         "Features:",
-        "• 🚀 Natural language to IBM Cloud commands",
+        "• 🚀 Natural language to cloud commands",
         "• 🔧 Intelligent error handling & suggestions",
         "• 📝 Interactive command editing (Esc to cancel)",
         "• ⬆️  Command history navigation (↑/↓ arrows)",
@@ -86,7 +87,7 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
     let mut history_index: Option<usize> = None;
     let mut cursor_pos = 0;
 
-    print!("{} ", "ibmcloud-ai>".green().bold());
+    print!("{} ", "cuc>".green().bold());
     io::stdout().flush()?;
 
     loop {
@@ -103,14 +104,14 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
                 KeyCode::Char(c) => {
                     input.insert(cursor_pos, c);
                     cursor_pos += 1;
-                    print!("\r{} {}", "ibmcloud-ai>".green().bold(), input);
+                    print!("\r{} {}", "cuc>".green().bold(), input);
                     io::stdout().flush()?;
                 }
                 KeyCode::Backspace => {
                     if cursor_pos > 0 {
                         input.remove(cursor_pos - 1);
                         cursor_pos -= 1;
-                        print!("\r{} {}  \r{} {}", "ibmcloud-ai>".green().bold(), input, "ibmcloud-ai>".green().bold(), input);
+                        print!("\r{} {}  \r{} {}", "cuc>".green().bold(), input, "cuc>".green().bold(), input);
                         io::stdout().flush()?;
                     }
                 }
@@ -124,7 +125,7 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
                         history_index = Some(new_index);
                         input = history[new_index].clone();
                         cursor_pos = input.len();
-                        print!("\r{} {}  \r{} {}", "ibmcloud-ai>".green().bold(), " ".repeat(50), "ibmcloud-ai>".green().bold(), input);
+                        print!("\r{} {}  \r{} {}", "cuc>".green().bold(), " ".repeat(50), "cuc>".green().bold(), input);
                         io::stdout().flush()?;
                     }
                 }
@@ -139,7 +140,7 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
                             input.clear();
                         }
                         cursor_pos = input.len();
-                        print!("\r{} {}  \r{} {}", "ibmcloud-ai>".green().bold(), " ".repeat(50), "ibmcloud-ai>".green().bold(), input);
+                        print!("\r{} {}  \r{} {}", "cuc>".green().bold(), " ".repeat(50), "cuc>".green().bold(), input);
                         io::stdout().flush()?;
                     }
                 }
@@ -152,4 +153,86 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
             }
         }
     }
+}
+
+/// Display help message
+pub fn print_help() {
+    println!("{}", "Available commands:".bold());
+    println!("  {} - Type natural language queries to translate to cloud commands", "query".green());
+    println!("  {} - Execute a command directly", "exec <command>".green());
+    println!("  {} - Show this help message", "help".green());
+    println!("  {} - Exit the application", "exit/quit".green());
+    println!();
+    println!("{}", "Examples:".bold());
+    println!("  list my resource groups");
+    println!("  show all kubernetes clusters");
+    println!("  exec ibmcloud target --cf");
+}
+
+/// Confirm command execution with user
+pub async fn confirm_execution(_command: &str) -> Result<bool> {
+    print!("{} Execute this command? [Y/n]: ", "❓".cyan());
+    io::stdout().flush()?;
+
+    let mut response = String::new();
+    io::stdin().read_line(&mut response)?;
+    let response = response.trim().to_lowercase();
+
+    Ok(response.is_empty() || response == "y" || response == "yes")
+}
+
+/// Execute a shell command and return success status
+pub async fn execute_command(command: &str) -> Result<bool> {
+    println!("{} Executing...", "🚀".yellow());
+
+    let output = if cfg!(target_os = "windows") {
+        Command::new("cmd").args(["/C", command]).output()?
+    } else {
+        Command::new("sh").arg("-c").arg(command).output()?
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    if !stdout.is_empty() {
+        println!("{}", stdout);
+    }
+
+    if !stderr.is_empty() {
+        eprintln!("{}", stderr.red());
+    }
+
+    if output.status.success() {
+        println!("{} Command executed successfully", "✅".green());
+        Ok(true)
+    } else {
+        println!("{} Command failed", "❌".red());
+        Ok(false)
+    }
+}
+
+/// Handle learning from failed commands
+pub async fn handle_learning(
+    query: &str,
+    failed_command: &str,
+    learning_engine: &mut CommandLearningEngine,
+) -> Result<()> {
+    println!("{} Would you like to provide the correct command?", "📝".cyan());
+    print!("Correct command (or press Enter to skip): ");
+    io::stdout().flush()?;
+
+    let mut correction = String::new();
+    io::stdin().read_line(&mut correction)?;
+    let correction = correction.trim();
+
+    if !correction.is_empty() {
+        learning_engine.add_correction(
+            query.to_string(),
+            correction.to_string(),
+            Some(format!("Failed command: {}", failed_command)),
+        ).await?;
+        println!("{} Thanks! I'll remember this.", "✅".green());
+    }
+
+    Ok(())
 }

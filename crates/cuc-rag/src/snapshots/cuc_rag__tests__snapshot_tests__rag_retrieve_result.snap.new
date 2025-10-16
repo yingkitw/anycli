@@ -1,0 +1,41 @@
+---
+source: crates/cuc-rag/src/tests.rs
+assertion_line: 78
+expression: result
+---
+documents:
+  - id: basic_knowledge_0_0
+    content: "IBM Cloud CLI is a command-line interface that provides a set of commands for managing IBM Cloud resources. You can use it to create, configure, and manage IBM Cloud services from your terminal."
+    embedding: ~
+    metadata:
+      category: basic_knowledge
+      chunk_index: 0
+      title: IBM Cloud CLI Overview
+      total_chunks: 1
+      type: documentation
+    score: 0.83
+  - id: basic_knowledge_1_0
+    content: "To install IBM Cloud CLI, you can download it from the IBM Cloud website or use package managers like Homebrew on macOS or apt-get on Ubuntu. After installation, use 'ibmcloud login' to authenticate."
+    embedding: ~
+    metadata:
+      category: installation_guide
+      chunk_index: 0
+      title: IBM Cloud CLI Installation
+      total_chunks: 1
+      type: documentation
+    score: 0.83
+  - id: basic_knowledge_5_0
+    content: "IBM Cloud CLI supports multiple output formats including JSON, table, and CSV. Use the '--output json' flag to get machine-readable output for scripting and automation."
+    embedding: ~
+    metadata:
+      category: output_formatting
+      chunk_index: 0
+      title: IBM Cloud CLI Output Formats
+      total_chunks: 1
+      type: documentation
+    score: 0.83
+context: "Relevant IBM Cloud CLI documentation:\n\n1. [IBM Cloud CLI Overview] IBM Cloud CLI is a command-line interface that provides a set of commands for managing IBM Cloud resources. You can use it to create, configure, and manage IBM Cloud services from your terminal.\n\n2. [IBM Cloud CLI Installation] To install IBM Cloud CLI, you can download it from the IBM Cloud website or use package managers like Homebrew on macOS or apt-get on Ubuntu. After installation, use 'ibmcloud login' to authenticate.\n\n3. [IBM Cloud CLI Output Formats] IBM Cloud CLI supports multiple output formats including JSON, table, and CSV. Use the '--output json' flag to get machine-readable output for scripting and automation.\n\n"
+metadata:
+  query: How to use IBM Cloud CLI
+  results_count: 3
+  top_k: 3

@@ -83,30 +83,81 @@ impl<L: LLMProvider, R: RAGEngine> CommandTranslator<L, R> {
         failed_command: &str,
         error_message: &str,
     ) -> Result<String> {
+        // Try to get RAG context for better suggestions
+        let mut rag_context = String::new();
+        if let Some(ref rag) = self.rag {
+            if rag.is_ready() {
+                let rag_query = RAGQuery {
+                    query: format!("troubleshooting error: {}", error_message),
+                    top_k: 2,
+                    score_threshold: Some(0.5),
+                    filters: None,
+                };
+                
+                if let Ok(rag_result) = rag.retrieve(&rag_query).await {
+                    if !rag_result.documents.is_empty() {
+                        rag_context = format!("\n\nRELEVANT DOCUMENTATION:\n{}\n", 
+                            rag_result.documents.iter()
+                                .take(2)
+                                .map(|d| format!("- {}", d.content))
+                                .collect::<Vec<_>>()
+                                .join("\n"));
+                    }
+                }
+            }
+        }
+
         let prompt = format!(
-            "You are an expert in cloud CLI troubleshooting. A user tried to execute a command but it failed.\n\
+            "You are a cloud CLI expert. A command failed and you must provide the EXACT fix.\n\
             \n\
-            Original Intent: {}\n\
-            Failed Command: {}\n\
-            Error Message: {}\n\
+            USER WANTED: {}\n\
+            COMMAND THAT FAILED: {}\n\
+            ERROR MESSAGE:\n{}\n\
+            {}\
             \n\
-            Analyze the error and provide:\n\
-            1. A brief explanation of what went wrong (1-2 sentences)\n\
-            2. The corrected command or next step to fix the issue\n\
+            YOUR TASK: Provide a clear, actionable solution.\n\
             \n\
-            Format your response as:\n\
-            Explanation: [your explanation]\n\
-            Suggested Command: [the corrected command or next step]\n\
+            ANALYZE THE ERROR:\n\
+            - If it says \"Not logged in\" → tell user to run: ibmcloud login\n\
+            - If it says \"Plugin not found\" → tell user to run: ibmcloud plugin install <plugin-name>\n\
+            - If it says \"command not found\" → provide the correct command syntax\n\
+            - If it says \"Resource not found\" → suggest how to list available resources\n\
+            - If it says \"Permission denied\" → explain what permissions are needed\n\
             \n\
-            Be concise and practical.",
+            RESPONSE FORMAT (be specific and direct):\n\
+            \n\
+            Problem: [One sentence: what went wrong]\n\
+            \n\
+            Fix: [The exact command(s) to run]\n\
+            $ <actual-command-here>\n\
+            \n\
+            DO NOT:\n\
+            - Say \"avoid speculation\"\n\
+            - Give generic advice\n\
+            - Be vague\n\
+            \n\
+            DO:\n\
+            - Give the EXACT command to run\n\
+            - Be specific and actionable\n\
+            - Include command examples with $\n\
+            \n\
+            Example good response:\n\
+            Problem: You are not authenticated to IBM Cloud.\n\
+            \n\
+            Fix: Log in to IBM Cloud first:\n\
+            $ ibmcloud login\n\
+            \n\
+            Then retry your original command.",
             original_query,
             failed_command,
-            error_message
+            error_message,
+            rag_context
         );
 
         let config = GenerationConfig {
             model_id: self.llm.model_id().to_string(),
-            max_tokens: 300,
+            max_tokens: 400,
+            temperature: Some(0.3), // Lower temperature for more focused responses
             ..Default::default()
         };
 

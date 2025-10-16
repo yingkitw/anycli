@@ -1,0 +1,9 @@
+---
+source: crates/cuc-cli/src/tests.rs
+expression: analysis
+---
+score: 0.6
+issues:
+  - Command is too short
+suggestions:
+  - Command may not follow common IBM Cloud CLI patterns

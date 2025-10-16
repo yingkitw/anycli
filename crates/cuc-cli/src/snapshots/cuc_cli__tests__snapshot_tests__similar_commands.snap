@@ -1,0 +1,12 @@
+---
+source: crates/cuc-cli/src/tests.rs
+expression: similar
+---
+- query: list all databases
+  correct_command: ibmcloud resource service-instances
+  error_pattern: ~
+  timestamp: "[timestamp]"
+- query: show my databases
+  correct_command: ibmcloud resource service-instances --service-name databases
+  error_pattern: ~
+  timestamp: "[timestamp]"

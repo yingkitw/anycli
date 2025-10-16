@@ -1,0 +1,11 @@
+---
+source: crates/cuc-cli/src/tests.rs
+expression: analysis
+---
+score: 0.35000002
+issues:
+  - "Command does not start with 'ibmcloud'"
+  - Command contains error indicators
+suggestions:
+  - "Ensure the command starts with 'ibmcloud'"
+  - Command may not follow common IBM Cloud CLI patterns

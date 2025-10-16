@@ -1,0 +1,5 @@
+---
+source: crates/cuc-watsonx/src/tests.rs
+expression: "WatsonxClient::GRANITE_4_H_SMALL"
+---
+ibm/granite-4-h-small

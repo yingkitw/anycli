@@ -1,0 +1,25 @@
+[package]
+name = "cuc-cli"
+version.workspace = true
+edition.workspace = true
+description = "CLI interface for IBM Cloud CLI AI"
+
+[dependencies]
+cuc-core = { path = "../cuc-core" }
+cuc-watsonx = { path = "../cuc-watsonx" }
+cuc-rag = { path = "../cuc-rag" }
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+clap = { workspace = true }
+colored = { workspace = true }
+crossterm = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+dotenvy = { workspace = true }
+regex = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+tempfile = { workspace = true }

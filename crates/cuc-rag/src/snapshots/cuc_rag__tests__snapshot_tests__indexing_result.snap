@@ -1,0 +1,7 @@
+---
+source: crates/cuc-rag/src/tests.rs
+expression: result
+---
+documents_indexed: 1
+documents_failed: 0
+errors: []

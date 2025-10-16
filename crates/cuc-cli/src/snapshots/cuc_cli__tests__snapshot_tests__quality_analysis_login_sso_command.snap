@@ -1,0 +1,7 @@
+---
+source: crates/cuc-cli/src/tests.rs
+expression: analysis
+---
+score: 1
+issues: []
+suggestions: []

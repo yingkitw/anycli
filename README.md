@@ -1,9 +1,28 @@
 # IBM Cloud CLI AI (icx)
 
-An AI-powered assistant for the IBM Cloud CLI that translates natural language queries into IBM Cloud commands.
+An AI-powered assistant for the IBM Cloud CLI that translates natural language queries into IBM Cloud commands using WatsonX AI.
+
+## Architecture
+
+Built with **Rust 2024** and a modular, trait-based architecture for maximum testability and extensibility.
+
+### Workspace Structure
+
+```
+ibmcloud-cli-ai/
+├── crates/
+│   ├── core/           # Core traits and types
+│   ├── watsonx/        # WatsonX AI integration
+│   ├── rag/            # RAG engine and vector stores
+│   └── cli/            # CLI interface utilities
+└── src/                # Main binary
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 
 ## Features
 
+### Core Capabilities
 - **Natural Language Processing**: Convert plain English requests into IBM Cloud CLI commands
 - **Interactive Chat Mode**: Engage in a conversation-like interface with the CLI
 - **Enhanced Command Editing**: Review and modify translated commands before execution with Esc to cancel
@@ -11,13 +30,20 @@ An AI-powered assistant for the IBM Cloud CLI that translates natural language q
 - **Command Execution**: Run the commands directly from the interface
 - **Interactive Command Support**: Automatically handles interactive commands like SSO login
 - **Login Status Check**: Automatically checks if you're logged into IBM Cloud before executing commands
-- **Professional Startup Banner**: Clean, informative banner displaying features and version info
+
+### AI-Powered Features
 - **🧠 Intelligent Learning System**: AI-powered command learning that captures user corrections and improves suggestions over time
 - **🔌 Smart Plugin Error Handling**: Detects missing plugin errors and provides specific guidance for installation and alternatives
 - **📚 Local RAG Engine**: Enhanced knowledge base with IBM Cloud CLI documentation for better command suggestions
 - **💡 Interactive Error Recovery**: Intelligent error pattern recognition with contextual suggestions and learning capabilities
 - **🔧 Robust WatsonX Integration**: Improved API response handling with enhanced prompt engineering and error recovery
 - **⚡ Pipeline Input Support**: Seamlessly handles both interactive and pipeline input modes for automation workflows
+
+### Technical Features
+- **Trait-Based Architecture**: Modular design with clear separation of concerns
+- **Test-Friendly**: Easy to mock and test with comprehensive test coverage
+- **Extensible**: Add new LLM providers or vector stores without changing existing code
+- **Type-Safe**: Leverages Rust's type system for reliability
 
 ## Installation
 
@@ -135,8 +161,90 @@ icx
 - [Kubernetes Service](https://cloud.ibm.com/docs/cli?topic=cli-kubernetes-service-cli)
 - [Catalog Management](https://cloud.ibm.com/docs/cli?topic=cli-ibmcloud_catalog)
 
+## Development
+
+### Prerequisites
+
+- Rust 1.80+ (Rust 2024 edition)
+- IBM Cloud CLI installed
+- WatsonX API credentials
+
+### Building
+
+```bash
+# Build all workspace crates
+cargo build --workspace
+
+# Build in release mode
+cargo build --release --workspace
+
+# Run tests
+cargo test --workspace
+
+# Check for issues
+cargo check --workspace
+```
+
+### Project Structure
+
+- **`crates/core`**: Core traits and types (`LLMProvider`, `RAGEngine`, `VectorStore`, `DocumentIndexer`)
+- **`crates/watsonx`**: WatsonX AI client implementation
+- **`crates/rag`**: RAG engine, vector stores, and document indexers
+- **`crates/cli`**: CLI utilities (translator, learning engine, quality analyzer)
+
+### Adding a New LLM Provider
+
+1. Implement the `LLMProvider` trait from `ibmcloud-cli-ai-core`
+2. Add your implementation to a new crate or the `watsonx` crate
+3. Update the main binary to use your provider
+
+Example:
+```rust
+use ibmcloud_cli_ai_core::{LLMProvider, GenerationConfig, GenerationResult};
+use async_trait::async_trait;
+
+pub struct MyLLMProvider {
+    // your fields
+}
+
+#[async_trait]
+impl LLMProvider for MyLLMProvider {
+    async fn connect(&mut self) -> Result<()> {
+        // implementation
+    }
+    
+    async fn generate(&self, prompt: &str) -> Result<GenerationResult> {
+        // implementation
+    }
+    
+    // ... other trait methods
+}
+```
+
+### Testing
+
+The project uses `insta` for snapshot testing:
+
+```bash
+# Run tests
+cargo test
+
+# Review snapshots
+cargo insta review
+
+# Accept all snapshots
+cargo insta accept
+```
+
+## Contributing
+
+See [TODO.md](TODO.md) for planned features and improvements.
+
 ## Powered By
 
-- Rust
-- WatsonX AI
+- Rust 2024
+- WatsonX AI (IBM Granite models)
 - IBM Cloud CLI
+- Tokio (async runtime)
+- Clap (CLI parsing)
+- Insta (snapshot testing)

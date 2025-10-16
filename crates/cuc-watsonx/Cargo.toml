@@ -1,0 +1,19 @@
+[package]
+name = "cuc-watsonx"
+version.workspace = true
+edition.workspace = true
+description = "WatsonX AI integration for IBM Cloud CLI AI"
+
+[dependencies]
+cuc-core = { path = "../cuc-core" }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+dotenvy = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true }

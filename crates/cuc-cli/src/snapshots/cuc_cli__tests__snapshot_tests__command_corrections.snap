@@ -1,0 +1,12 @@
+---
+source: crates/cuc-cli/src/tests.rs
+expression: all_corrections
+---
+- query: show clusters
+  correct_command: ibmcloud ks clusters
+  error_pattern: ~
+  timestamp: "[timestamp]"
+- query: list databases
+  correct_command: ibmcloud resource service-instances --service-name databases-for-postgresql
+  error_pattern: Plugin missing error
+  timestamp: "[timestamp]"

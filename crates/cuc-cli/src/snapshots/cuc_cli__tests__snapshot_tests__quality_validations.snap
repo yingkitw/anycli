@@ -1,0 +1,12 @@
+---
+source: crates/cuc-cli/src/tests.rs
+expression: results
+---
+- - ibmcloud resource groups
+  - true
+- - ibmcloud login
+  - true
+- - error
+  - false
+- - ""
+  - false

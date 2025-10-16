@@ -432,13 +432,17 @@ mod tests {
     async fn test_watsonx_creation() {
         // This test will fail if environment variables are not set
         // but it tests the basic structure
-        std::env::set_var("API_KEY", "test_key");
-        std::env::set_var("PROJECT_ID", "test_project");
+        unsafe {
+            std::env::set_var("API_KEY", "test_key");
+            std::env::set_var("PROJECT_ID", "test_project");
+        }
         
         let result = WatsonxAI::new();
         assert!(result.is_ok());
         
-        std::env::remove_var("API_KEY");
-        std::env::remove_var("PROJECT_ID");
+        unsafe {
+            std::env::remove_var("API_KEY");
+            std::env::remove_var("PROJECT_ID");
+        }
     }
 }

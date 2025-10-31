@@ -1,5 +1,0 @@
----
-source: crates/cuc-watsonx/src/tests.rs
-expression: score
----
-0.15

@@ -1,4 +1,4 @@
-# CUC (Cloud Universal CLI)
+# AnyCLI (Cloud Universal CLI)
 
 An AI-powered universal CLI assistant that translates natural language queries into cloud commands using WatsonX AI. Supports multiple cloud providers including IBM Cloud, AWS, GCP, Azure, and VMware vSphere.
 
@@ -9,17 +9,16 @@ Built with **Rust 2024** and a modular, trait-based architecture for maximum tes
 ### Workspace Structure
 
 ```
-cuc/
+anycli/
 ├── crates/
-│   ├── cuc-core/       # Core traits and types
-│   ├── cuc-watsonx/    # WatsonX AI integration
-│   ├── cuc-rag/        # RAG engine and vector stores
-│   ├── cuc-cli/        # CLI interface utilities
-│   ├── cuc-ibmcloud/   # IBM Cloud provider
-│   ├── cuc-aws/        # AWS provider
-│   ├── cuc-gcp/        # GCP provider
-│   ├── cuc-azure/      # Azure provider
-│   └── cuc-vmware/     # VMware vSphere provider
+│   ├── anycli-core/       # Core traits and types
+│   ├── anycli-rag/        # RAG engine and vector stores
+│   ├── anycli-cli/        # CLI interface utilities
+│   ├── anycli-ibmcloud/   # IBM Cloud provider
+│   ├── anycli-aws/        # AWS provider
+│   ├── anycli-gcp/        # GCP provider
+│   ├── anycli-azure/      # Azure provider
+│   └── anycli-vmware/     # VMware vSphere provider
 └── src/                # Main binary
 ```
 
@@ -33,7 +32,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 - **Interactive Chat Mode**: Engage in a conversation-like interface with the CLI
 - **Enhanced Command Editing**: Review and modify translated commands before execution with Esc to cancel
 - **Command History Navigation**: Use ↑/↓ arrow keys to navigate through previous commands
-- **Command Execution**: Run the commands directly from the interface
+- **Command Execution**: Run the commands directly from the interface with automatic JSON repair for AWS output
 - **Interactive Command Support**: Automatically handles interactive commands like SSO login
 - **Login Status Check**: Automatically checks if you're logged in before executing commands
 
@@ -49,6 +48,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 - **Test-Friendly**: Easy to mock and test with comprehensive test coverage
 - **Extensible**: Add new LLM providers or vector stores without changing existing code
 - **Type-Safe**: Leverages Rust's type system for reliability
+- **JSON Repair**: Automatic JSON repair for AWS CLI output using anyrepair
 
 ## Installation
 
@@ -69,7 +69,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
 Simply run the CLI to start the interactive chat mode:
 
 ```
-cuc
+cloudcli
 ```
 
 In chat mode:
@@ -97,37 +97,37 @@ In chat mode:
 
 **IBM Cloud:**
 ```
-cuc> list my code engine applications
-cuc> show me all my kubernetes clusters
-cuc> create a new resource group called my-project
+anycli> list my code engine applications
+anycli> show me all my kubernetes clusters
+anycli> create a new resource group called my-project
 ```
 
 **AWS:**
 ```
-cuc> list all my ec2 instances
-cuc> show s3 buckets in us-east-1
-cuc> create a lambda function
+anycli> list all my ec2 instances
+anycli> show s3 buckets in us-east-1
+anycli> create a lambda function
 ```
 
 **GCP:**
 ```
-cuc> list compute instances
-cuc> show all cloud storage buckets
-cuc> create a new gke cluster
+anycli> list compute instances
+anycli> show all cloud storage buckets
+anycli> create a new gke cluster
 ```
 
 **Azure:**
 ```
-cuc> list virtual machines
-cuc> show storage accounts
-cuc> create a resource group
+anycli> list virtual machines
+anycli> show storage accounts
+anycli> create a resource group
 ```
 
 **VMware vSphere:**
 ```
-cuc> list all vms
-cuc> show esxi hosts
-cuc> power on virtual machine
+anycli> list all vms
+anycli> show esxi hosts
+anycli> power on virtual machine
 ```
 
 ## 🧠 Learning System
@@ -146,7 +146,7 @@ The AI assistant now includes an intelligent learning system that improves over 
 
 ### Example Learning Interaction
 ```
-cuc> list my databases
+anycli> list my databases
 ❌ Command failed: 'dbs' is not a registered command. Check 'ibmcloud plugin list' for available plug-ins.
 
 🔌 This appears to be a missing plugin. You may need to:
@@ -179,11 +179,11 @@ Recent updates have significantly improved the reliability and accuracy of the W
 ### Usage Examples with Pipeline Input
 ```bash
 # Pipeline input for automation
-echo "list all resource groups" | cuc
-echo "show me all wml instances" | cuc
+echo "list all resource groups" | anycli
+echo "show me all wml instances" | anycli
 
 # Interactive mode
-cuc
+anycli
 ```
 
 ## Cloud CLI References
@@ -243,10 +243,9 @@ cargo check --workspace
 
 ### Project Structure
 
-- **`crates/cuc-core`**: Core traits and types (`LLMProvider`, `RAGEngine`, `VectorStore`, `DocumentIndexer`)
-- **`crates/cuc-watsonx`**: WatsonX AI client implementation
-- **`crates/cuc-rag`**: RAG engine, vector stores, and document indexers
-- **`crates/cuc-cli`**: CLI utilities (translator, learning engine, quality analyzer)
+- **`crates/anycli-core`**: Core traits and types (`LLMProvider`, `RAGEngine`, `VectorStore`, `DocumentIndexer`)
+- **`crates/anycli-rag`**: RAG engine, vector stores, and document indexers
+- **`crates/anycli-cli`**: CLI utilities (translator, learning engine, quality analyzer)
 
 ### Adding a New LLM Provider
 
@@ -256,7 +255,7 @@ cargo check --workspace
 
 Example:
 ```rust
-use cuc_core::{LLMProvider, GenerationConfig, GenerationResult};
+use anycli_core::{LLMProvider, GenerationConfig, GenerationResult};
 use async_trait::async_trait;
 
 pub struct MyLLMProvider {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-CUC (Cloud Universal CLI) is a modular, trait-based Rust application that translates natural language queries into cloud CLI commands using WatsonX AI and RAG (Retrieval-Augmented Generation). It provides a unified interface for multiple cloud providers including IBM Cloud, AWS, GCP, Azure, and VMware vSphere.
+AnyCLI (Cloud Universal CLI) is a modular, trait-based Rust application that translates natural language queries into cloud CLI commands using WatsonX AI and RAG (Retrieval-Augmented Generation). It provides a unified interface for multiple cloud providers including IBM Cloud, AWS, GCP, Azure, and VMware vSphere.
 
 ## Rust Edition
 
@@ -14,24 +14,23 @@ CUC (Cloud Universal CLI) is a modular, trait-based Rust application that transl
 The project is organized as a Cargo workspace with multiple crates:
 
 ```
-cuc/
+anycli/
 ├── crates/
-│   ├── cuc-core/       # Core traits and types
-│   ├── cuc-watsonx/    # WatsonX AI integration
-│   ├── cuc-rag/        # RAG engine, vector stores, document indexers
-│   ├── cuc-cli/        # CLI interface and utilities
-│   ├── cuc-ibmcloud/   # IBM Cloud provider implementation
-│   ├── cuc-aws/        # AWS provider implementation
-│   ├── cuc-gcp/        # GCP provider implementation
-│   ├── cuc-azure/      # Azure provider implementation
-│   └── cuc-vmware/     # VMware vSphere provider implementation
+│   ├── anycli-core/       # Core traits and types
+│   ├── anycli-rag/        # RAG engine, vector stores, document indexers
+│   ├── anycli-cli/        # CLI interface and utilities
+│   ├── anycli-ibmcloud/   # IBM Cloud provider implementation
+│   ├── anycli-aws/        # AWS provider implementation
+│   ├── anycli-gcp/        # GCP provider implementation
+│   ├── anycli-azure/      # Azure provider implementation
+│   └── anycli-vmware/     # VMware vSphere provider implementation
 ├── src/                # Main binary
 └── Cargo.toml          # Workspace configuration
 ```
 
 ## Crate Descriptions
 
-### `cuc-core`
+### `anycli-core`
 
 The core crate defines fundamental traits and types used across the system:
 
@@ -50,19 +49,7 @@ The core crate defines fundamental traits and types used across the system:
   - `Document`, `IndexingConfig`: Document indexer types
   - `CloudProviderType`: Enum for supported cloud providers
 
-### `cuc-watsonx`
-
-WatsonX AI integration crate:
-
-- **`WatsonxClient`**: Implements `LLMProvider` trait
-- **`WatsonxConfig`**: Configuration for WatsonX API
-- **Features**:
-  - OAuth2 authentication with IBM Cloud IAM
-  - Streaming text generation
-  - Retry logic with quality assessment
-  - Feedback-based prompt enhancement
-
-### `cuc-rag`
+### `anycli-rag`
 
 RAG engine and supporting components:
 
@@ -72,7 +59,7 @@ RAG engine and supporting components:
 - **`LocalDocumentIndexer`**: Document indexing with chunking
 - **`WebDocumentIndexer`**: Web scraping and indexing (future)
 
-### `cuc-cli`
+### `anycli-cli`
 
 CLI interface and utilities:
 
@@ -85,31 +72,31 @@ CLI interface and utilities:
 
 Each cloud provider has its own dedicated crate implementing the `CloudProvider` trait:
 
-#### `cuc-ibmcloud`
+#### `anycli-ibmcloud`
 - IBM Cloud CLI (`ibmcloud`) integration
 - Resource management, Kubernetes, Code Engine, Cloud Foundry
 - Authentication status checking
 - Provider-specific RAG context
 
-#### `cuc-aws`
+#### `anycli-aws`
 - AWS CLI (`aws`) integration
 - EC2, S3, Lambda, EKS operations
 - AWS STS authentication checking
 - Provider-specific command patterns
 
-#### `cuc-gcp`
+#### `anycli-gcp`
 - Google Cloud CLI (`gcloud`) integration
 - Compute Engine, Cloud Storage, GKE, Cloud Functions
 - GCP auth status checking
 - Provider-specific command validation
 
-#### `cuc-azure`
+#### `anycli-azure`
 - Azure CLI (`az`) integration
 - Virtual Machines, Storage Accounts, AKS, Functions
 - Azure account authentication checking
 - Provider-specific command patterns
 
-#### `cuc-vmware`
+#### `anycli-vmware`
 - VMware vSphere CLI (`govc`) integration
 - VM management, ESXi hosts, vCenter operations
 - vSphere authentication checking
@@ -209,7 +196,7 @@ Custom error types defined in `core::Error`:
 
 ### Cloud Provider Support
 
-CUC supports multiple cloud providers through a unified translation layer:
+AnyCLI supports multiple cloud providers through a unified translation layer:
 
 ```
 User Query (Natural Language)

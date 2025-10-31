@@ -3,18 +3,24 @@ use clap::Parser;
 use colored::*;
 use std::sync::Arc;
 
-// Import from our modular crates
-use cuc_core::{LLMProvider, RAGEngine, VectorStore, CloudProviderType, detect_provider_from_query};
-use cuc_watsonx::WatsonxClient;
-use cuc_rag::{LocalVectorStore, LocalDocumentIndexer, LocalRAGEngine};
-use cuc_cli::{
+// Core modules
+mod core;
+mod cli;
+mod rag;
+mod providers;
+mod watsonx_adapter;
+
+use core::{LLMProvider, RAGEngine, VectorStore, CloudProviderType, detect_provider_from_query};
+use watsonx_adapter::create_watsonx_client;
+use rag::{LocalVectorStore, LocalDocumentIndexer, LocalRAGEngine};
+use cli::{
     CommandTranslator, CommandLearningEngine, QualityAnalyzer,
     display_banner, handle_input_with_history, print_help,
-    confirm_execution, execute_command, handle_learning,
+    confirm_execution, execute_command, execute_command_with_provider, handle_learning,
 };
 
 #[derive(Parser)]
-#[command(name = "cuc")]
+#[command(name = "anycli")]
 #[command(about = "AI-powered Cloud Universal CLI assistant", long_about = None)]
 struct Cli {
     /// Direct command to execute
@@ -55,8 +61,7 @@ async fn main() -> Result<()> {
     println!("{} Default provider: {}", "ℹ️".cyan(), default_provider);
 
     // Initialize components
-    let mut watsonx = WatsonxClient::from_env()?;
-    watsonx.connect().await?;
+    let watsonx = create_watsonx_client()?;
 
     // Initialize vector store and RAG
     let mut vector_store = LocalVectorStore::new();
@@ -152,7 +157,7 @@ async fn main() -> Result<()> {
                 }
 
                 if confirm_execution(&command).await? {
-                    let result = execute_command(&command).await?;
+                    let result = execute_command_with_provider(&command, Some(active_provider)).await?;
                     
                     if !result.success {
                         // Get AI-powered recovery suggestion

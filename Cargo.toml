@@ -1,23 +1,12 @@
 [workspace]
-members = [
-    "crates/cuc-core",
-    "crates/cuc-watsonx",
-    "crates/cuc-rag",
-    "crates/cuc-cli",
-    "crates/cuc-ibmcloud",
-    "crates/cuc-aws",
-    "crates/cuc-gcp",
-    "crates/cuc-azure",
-    "crates/cuc-vmware",
-]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-authors = ["CUC Team"]
-license = "MIT"
-repository = "https://github.com/watsonx-apac/cuc"
+authors = ["AnyCLI Team"]
+license = "Apache 2.0"
+repository = "https://github.com/yingkitw/anycli"
 
 [workspace.dependencies]
 # Core dependencies
@@ -55,33 +44,31 @@ uuid = { version = "1.11", features = ["v4", "serde"] }
 # Web scraping
 scraper = "0.21"
 
+# watsonx
+watsonx-rs = "0.1.2"
+
 # Utilities
 md5 = "0.7"
 url = "2.5"
 chrono = { version = "0.4", features = ["serde"] }
 tempfile = "3.14"
 base64 = "0.22"
+anyrepair = "0.1.5"
 
 # Testing
 insta = { version = "1.41", features = ["yaml", "redactions"] }
 
 [package]
-name = "cuc"
+name = "anycli"
 version.workspace = true
 edition.workspace = true
 description = "AI-powered Cloud Universal CLI that translates natural language to cloud commands"
 
 [[bin]]
-name = "cuc"
+name = "anycli"
 path = "src/main.rs"
 
 [dependencies]
-# Workspace crates
-cuc-core = { path = "crates/cuc-core" }
-cuc-watsonx = { path = "crates/cuc-watsonx" }
-cuc-rag = { path = "crates/cuc-rag" }
-cuc-cli = { path = "crates/cuc-cli" }
-
 # External dependencies
 anyhow = { workspace = true }
 clap = { workspace = true }
@@ -102,6 +89,11 @@ url = { workspace = true }
 chrono = { workspace = true }
 tempfile = { workspace = true }
 base64 = { workspace = true }
+anyrepair = { workspace = true }
+watsonx-rs = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+pulldown-cmark = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }

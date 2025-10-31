@@ -1,4 +1,4 @@
-# TODO - CUC (Cloud Universal CLI)
+# TODO - AnyCLI (Cloud Universal CLI)
 
 ## Completed ✅
 
@@ -14,7 +14,7 @@
 - [x] Add insta for snapshot testing
 - [x] Ensure cargo build success
 - [x] Update documentation (README.md, ARCHITECTURE.md, TODO.md)
-- [x] Rename program to CUC (Cloud Universal CLI)
+- [x] Rename program to AnyCLI (Cloud Universal CLI)
 - [x] Migrate all capabilities from src/ to crates/
 - [x] Delete legacy folder after migration
 - [x] Simplify main.rs to only orchestration logic
@@ -25,6 +25,8 @@
 - [x] Implement CloudProvider trait for all 5 providers
 - [x] Add provider-specific RAG context and command validation
 - [x] Implement AI-powered error recovery with WatsonX suggestions
+- [x] Merge features from cac project (JSON repair for AWS CLI output)
+- [x] Add anyrepair dependency for JSON repair functionality
 
 ## In Progress 🚧
 
@@ -137,10 +139,10 @@
 ## Notes 📝
 
 ### Program Name
-- **CUC**: Cloud Universal CLI
+- **AnyCLI**: Cloud Universal CLI
 - Renamed from "IBM Cloud CLI AI (icx)" to support universal cloud CLI operations
-- Binary name changed from `icx` to `cuc`
-- Package name changed from `ibmcloud-cli-ai` to `cuc`
+- Binary name changed from `icx` to `anycli`
+- Package name changed from `ibmcloud-cli-ai` to `anycli`
 
 ### Multi-Cloud Support
 - **Supported Providers**: IBM Cloud, AWS, GCP, Azure, VMware vSphere
@@ -149,11 +151,11 @@
 - **Default Provider**: IBM Cloud (configurable)
 - **VMware CLI**: Uses `govc` (vSphere CLI) for VMware operations
 - **Provider Crates**: Each provider has its own crate implementing `CloudProvider` trait
-  - `cuc-ibmcloud`: IBM Cloud provider
-  - `cuc-aws`: AWS provider
-  - `cuc-gcp`: GCP provider
-  - `cuc-azure`: Azure provider
-  - `cuc-vmware`: VMware vSphere provider
+  - `anycli-ibmcloud`: IBM Cloud provider
+  - `anycli-aws`: AWS provider
+  - `anycli-gcp`: GCP provider
+  - `anycli-azure`: Azure provider
+  - `anycli-vmware`: VMware vSphere provider
 - **Features**: CLI detection, authentication checking, command validation, RAG context
 
 ### Migration Strategy

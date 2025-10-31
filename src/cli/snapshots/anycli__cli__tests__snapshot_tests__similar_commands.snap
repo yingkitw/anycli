@@ -1,5 +1,6 @@
 ---
-source: crates/cuc-cli/src/tests.rs
+source: src/cli/tests.rs
+assertion_line: 109
 expression: similar
 ---
 - query: list all databases

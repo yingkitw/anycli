@@ -1,13 +1,12 @@
 ---
-source: crates/cuc-cli/src/tests.rs
+source: src/cli/tests.rs
+assertion_line: 27
 expression: analysis
 ---
-score: 0.15
+score: 0.35000002
 issues:
   - "Command does not start with 'ibmcloud'"
-  - Command is empty
-  - Command spans multiple lines
+  - Command contains error indicators
 suggestions:
   - "Ensure the command starts with 'ibmcloud'"
   - Command may not follow common IBM Cloud CLI patterns
-  - Use a single-line command

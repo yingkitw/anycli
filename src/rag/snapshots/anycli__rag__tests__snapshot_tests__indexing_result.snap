@@ -1,5 +1,6 @@
 ---
-source: crates/cuc-rag/src/tests.rs
+source: src/rag/tests.rs
+assertion_line: 55
 expression: result
 ---
 documents_indexed: 1

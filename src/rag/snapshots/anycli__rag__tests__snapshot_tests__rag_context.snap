@@ -1,5 +1,6 @@
 ---
-source: crates/cuc-rag/src/tests.rs
+source: src/rag/tests.rs
+assertion_line: 113
 expression: context
 ---
 "Relevant IBM Cloud CLI documentation:\n\n1. [Commands] IBM Cloud CLI commands\n\n2. [Installation] Installation guide\n\n"

@@ -229,7 +229,7 @@ impl<V: VectorStore + 'static> DocumentIndexer for WebDocumentIndexer<V> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vector_store::LocalVectorStore;
+    use crate::rag::LocalVectorStore;
 
     #[tokio::test]
     async fn test_document_indexing() {

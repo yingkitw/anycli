@@ -1,5 +1,6 @@
 ---
-source: crates/cuc-rag/src/tests.rs
+source: src/rag/tests.rs
+assertion_line: 34
 expression: results.documents
 ---
 - id: test_doc_1

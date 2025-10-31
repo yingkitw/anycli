@@ -1,5 +1,6 @@
 ---
-source: crates/cuc-cli/src/tests.rs
+source: src/cli/tests.rs
+assertion_line: 47
 expression: results
 ---
 - - ibmcloud resource groups

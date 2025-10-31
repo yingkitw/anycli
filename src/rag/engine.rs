@@ -178,8 +178,8 @@ impl<V: VectorStore + 'static, D: DocumentIndexer + 'static> RAGEngine for Local
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vector_store::LocalVectorStore;
-    use crate::document_indexer::LocalDocumentIndexer;
+    use crate::rag::LocalVectorStore;
+    use crate::rag::LocalDocumentIndexer;
 
     #[tokio::test]
     async fn test_rag_engine() {

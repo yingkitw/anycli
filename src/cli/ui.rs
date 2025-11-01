@@ -88,7 +88,7 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
     let mut history_index: Option<usize> = None;
     let mut cursor_pos = 0;
 
-    print!("{} ", "cuc>".green().bold());
+    print!("{} ", "anycli>".green().bold());
     io::stdout().flush()?;
 
     loop {
@@ -105,14 +105,14 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
                 KeyCode::Char(c) => {
                     input.insert(cursor_pos, c);
                     cursor_pos += 1;
-                    print!("\r{} {}", "cuc>".green().bold(), input);
+                    print!("\r{} {}", "anycli>".green().bold(), input);
                     io::stdout().flush()?;
                 }
                 KeyCode::Backspace => {
                     if cursor_pos > 0 {
                         input.remove(cursor_pos - 1);
                         cursor_pos -= 1;
-                        print!("\r{} {}  \r{} {}", "cuc>".green().bold(), input, "cuc>".green().bold(), input);
+                        print!("\r{} {}  \r{} {}", "anycli>".green().bold(), input, "anycli>".green().bold(), input);
                         io::stdout().flush()?;
                     }
                 }
@@ -126,7 +126,7 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
                         history_index = Some(new_index);
                         input = history[new_index].clone();
                         cursor_pos = input.len();
-                        print!("\r{} {}  \r{} {}", "cuc>".green().bold(), " ".repeat(50), "cuc>".green().bold(), input);
+                        print!("\r{} {}  \r{} {}", "anycli>".green().bold(), " ".repeat(50), "anycli>".green().bold(), input);
                         io::stdout().flush()?;
                     }
                 }
@@ -141,7 +141,7 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
                             input.clear();
                         }
                         cursor_pos = input.len();
-                        print!("\r{} {}  \r{} {}", "cuc>".green().bold(), " ".repeat(50), "cuc>".green().bold(), input);
+                        print!("\r{} {}  \r{} {}", "anycli>".green().bold(), " ".repeat(50), "anycli>".green().bold(), input);
                         io::stdout().flush()?;
                     }
                 }

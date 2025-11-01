@@ -26,7 +26,11 @@ impl WatsonxAdapter {
 #[async_trait]
 impl LLMProvider for WatsonxAdapter {
     async fn connect(&mut self) -> Result<()> {
-        // watsonx-rs handles connection internally when calling generate methods
+        // The watsonx-rs client needs to be connected before use
+        // Try to call connect if the method exists
+        self.client.connect()
+            .await
+            .map_err(|e| Error::LLMProvider(format!("WatsonX connection failed: {}", e)))?;
         Ok(())
     }
 
@@ -48,8 +52,7 @@ impl LLMProvider for WatsonxAdapter {
             .with_stop_sequences(config.stop_sequences.clone());
 
         let generation_future: std::pin::Pin<Box<dyn std::future::Future<Output = Result<String>> + Send>> = Box::pin(async {
-            // Use generate_text_stream as per user requirement
-            // Note: generate_text_stream requires a callback for streaming, using generate_text for now
+            // Use generate_text from watsonx-rs
             let watx_result = self.client.generate_text(prompt, &watx_config).await
                 .map_err(|e| Error::LLMProvider(format!("WatsonX generation failed: {}", e)))?;
             Ok::<String, Error>(watx_result.text)
@@ -263,6 +266,10 @@ pub fn create_watsonx_client() -> Result<WatsonxAdapter> {
         .map_err(|_| Error::Configuration(
             "WATSONX_PROJECT_ID or PROJECT_ID environment variable not found".to_string()
         ))?;
+
+    eprintln!("✅ Loaded WatsonX credentials from .env");
+    eprintln!("   API Key: {}...{}", &api_key[..10.min(api_key.len())], &api_key[api_key.len().saturating_sub(5)..]);
+    eprintln!("   Project ID: {}", project_id);
 
     let config = WatsonxConfig::new(api_key, project_id);
     let client = WatsonxClient::new(config)

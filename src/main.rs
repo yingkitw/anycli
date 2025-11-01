@@ -1,6 +1,6 @@
 use anyhow::Result;
-use clap::Parser;
-use colored::*;
+use clap::{Parser, Subcommand};
+use colored::Colorize;
 use std::sync::Arc;
 
 // Core modules
@@ -10,30 +10,46 @@ mod rag;
 mod providers;
 mod watsonx_adapter;
 
-use core::{LLMProvider, RAGEngine, VectorStore, CloudProviderType, detect_provider_from_query};
+use core::{LLMProvider, RAGEngine, VectorStore, CloudProviderType};
 use watsonx_adapter::create_watsonx_client;
 use rag::{LocalVectorStore, LocalDocumentIndexer, LocalRAGEngine};
 use cli::{
-    CommandTranslator, CommandLearningEngine, QualityAnalyzer,
+    CommandTranslator, CommandLearningEngine,
     display_banner, handle_input_with_history, print_help,
-    confirm_execution, execute_command, execute_command_with_provider, handle_learning,
+    confirm_execution, execute_command_with_provider, handle_learning,
 };
 
 #[derive(Parser)]
 #[command(name = "anycli")]
-#[command(about = "AI-powered Cloud Universal CLI assistant", long_about = None)]
+#[command(about = "AI-powered Cloud Universal CLI assistant")]
+#[command(version = "0.1.0")]
+#[command(author = "AnyCLI Team")]
 struct Cli {
-    /// Direct command to execute
-    #[arg(short, long)]
-    command: Option<String>,
-    
-    /// Cloud provider (ibmcloud, aws, gcp, azure)
-    #[arg(short, long)]
+    #[command(subcommand)]
+    command: Option<Commands>,
+
+    /// Cloud provider (ibmcloud, aws, gcp, azure, vmware)
+    #[arg(short, long, global = true)]
     provider: Option<String>,
-    
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Translate natural language to cloud command
+    #[command(about = "Translate a natural language query to a cloud command")]
+    Translate {
+        /// The natural language query
+        query: String,
+    },
+
     /// List supported cloud providers
-    #[arg(long)]
-    list_providers: bool,
+    #[command(about = "Show all supported cloud providers")]
+    Providers,
+
+    /// Interactive mode (default)
+    #[command(about = "Start interactive mode")]
+    Interactive,
+
 }
 
 #[tokio::main]
@@ -41,56 +57,61 @@ async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     let cli = Cli::parse();
 
-    // Handle list providers command
-    if cli.list_providers {
-        println!("{}", "Supported Cloud Providers:".bold());
-        for provider in CloudProviderType::all() {
-            println!("  {} - {}", provider.cli_command().green(), provider.display_name());
-        }
-        return Ok(());
-    }
-
     // Parse cloud provider if specified
     let default_provider = if let Some(ref provider_str) = cli.provider {
         CloudProviderType::from_str(provider_str)
             .ok_or_else(|| anyhow::anyhow!("Unknown cloud provider: {}", provider_str))?
     } else {
-        CloudProviderType::IBMCloud // Default to IBM Cloud for now
+        CloudProviderType::IBMCloud
     };
 
-    println!("{} Default provider: {}", "ℹ️".cyan(), default_provider);
-
     // Initialize components
-    let watsonx = create_watsonx_client()?;
+    let mut watsonx = create_watsonx_client()?;
+    watsonx.connect().await?;
 
-    // Initialize vector store and RAG
     let mut vector_store = LocalVectorStore::new();
     vector_store.connect().await?;
     let vector_store = Arc::new(vector_store);
 
     let document_indexer = Arc::new(LocalDocumentIndexer::new(vector_store.clone()));
     let mut rag_engine = LocalRAGEngine::new(vector_store.clone(), document_indexer.clone());
-
-    // Initialize RAG engine
+    
     match rag_engine.initialize().await {
-        Ok(_) => println!("✅ RAG engine initialized"),
-        Err(e) => println!("⚠️  RAG initialization failed: {}. Continuing without RAG.", e),
+        Ok(_) => {},
+        Err(e) => eprintln!("⚠️  RAG initialization failed: {}", e),
     }
 
     let translator = CommandTranslator::with_rag(watsonx, rag_engine);
     let mut learning_engine = CommandLearningEngine::new("command_corrections.json")?;
-    let quality_analyzer = QualityAnalyzer::new();
 
-    // Handle direct command execution
-    if let Some(cmd) = cli.command {
-        let result = translator.translate(&cmd).await?;
-        println!("{}", result);
-        return Ok(());
+    // Handle commands
+    match cli.command {
+        Some(Commands::Providers) => {
+            println!("{}", "Supported Cloud Providers:".bold());
+            for provider in CloudProviderType::all() {
+                println!("  {} - {}", provider.cli_command().green(), provider.display_name());
+            }
+        }
+        Some(Commands::Translate { query }) => {
+            match translator.translate(&query).await {
+                Ok(command) => println!("{}", command),
+                Err(e) => eprintln!("{} {}", "❌".red(), e),
+            }
+        }
+        Some(Commands::Interactive) | None => {
+            run_interactive(&translator, &mut learning_engine, default_provider).await?;
+        }
     }
 
-    // Interactive mode
-    display_banner();
+    Ok(())
+}
 
+async fn run_interactive(
+    translator: &CommandTranslator<impl LLMProvider, impl RAGEngine>,
+    learning_engine: &mut CommandLearningEngine,
+    default_provider: CloudProviderType,
+) -> Result<()> {
+    display_banner();
     let mut history = Vec::new();
 
     loop {
@@ -113,84 +134,25 @@ async fn main() -> Result<()> {
             continue;
         }
 
-        if input_lower.starts_with("exec ") {
-            let cmd = input[5..].trim();
-            execute_command(cmd).await?;
-            continue;
-        }
-
-        // Check for learned commands
-        if let Some(learned) = learning_engine.get_learned_command(&input) {
-            println!("{} Found learned command", "💡".cyan());
-            println!("{} {}", "→".green(), learned.correct_command);
-            
-            if confirm_execution(&learned.correct_command).await? {
-                execute_command(&learned.correct_command).await?;
-            }
-            continue;
-        }
-
-        // Detect cloud provider from query
-        let detected_provider = detect_provider_from_query(&input);
-        let active_provider = if let Some(detection) = detected_provider {
-            println!("{} Detected provider: {} (confidence: {:.0}%)", 
-                "🔍".cyan(), detection.provider, detection.confidence * 100.0);
-            detection.provider
-        } else {
-            default_provider
-        };
-
         // Translate natural language to command
-        println!("{} Translating for {}...", "🤖".blue(), active_provider);
-        
         match translator.translate(&input).await {
             Ok(command) => {
-                let analysis = quality_analyzer.analyze(&command);
-                
                 println!("{} {}", "→".green(), command.bold());
                 
-                if analysis.score < 0.6 {
-                    println!("{} Quality score: {:.1}%", "⚠️".yellow(), analysis.score * 100.0);
-                    for issue in &analysis.issues {
-                        println!("  {} {}", "•".yellow(), issue);
-                    }
-                }
-
                 if confirm_execution(&command).await? {
-                    let result = execute_command_with_provider(&command, Some(active_provider)).await?;
+                    let result = execute_command_with_provider(&command, Some(default_provider)).await?;
                     
                     if !result.success {
-                        // Get AI-powered recovery suggestion
-                        println!("\n{} Getting AI suggestion for recovery...", "🤖".cyan());
-                        
-                        let error_msg = if !result.stderr.is_empty() {
-                            result.stderr.clone()
-                        } else {
-                            "Command failed with no error message".to_string()
-                        };
-                        
-                        match translator.suggest_recovery(&input, &command, &error_msg).await {
-                            Ok(suggestion) => {
-                                println!("\n{} AI Suggestion:", "💡".green().bold());
-                                println!("{}", suggestion);
-                                println!();
-                            }
-                            Err(e) => {
-                                eprintln!("{} Failed to get AI suggestion: {}", "⚠️".yellow(), e);
-                            }
-                        }
-                        
-                        // Still offer manual learning
-                        handle_learning(&input, &command, &mut learning_engine).await?;
+                        println!("{} Command failed", "❌".red());
+                        handle_learning(&input, &command, learning_engine).await?;
                     }
                 }
             }
             Err(e) => {
-                println!("{} Translation failed: {}", "❌".red(), e);
+                println!("{} {}", "❌".red(), e);
             }
         }
     }
 
     Ok(())
 }
-

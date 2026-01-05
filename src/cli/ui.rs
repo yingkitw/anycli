@@ -160,6 +160,7 @@ pub async fn handle_input_with_history(history: &mut Vec<String>) -> Result<Stri
 pub fn print_help() {
     println!("{}", "Available commands:".bold());
     println!("  {} - Type natural language queries to translate to cloud commands", "query".green());
+    println!("  {} - Deploy applications to cloud (e.g., 'deploy to code engine')", "deploy".green());
     println!("  {} - Execute a command directly", "exec <command>".green());
     println!("  {} - Show this help message", "help".green());
     println!("  {} - Exit the application", "exit/quit".green());
@@ -167,6 +168,8 @@ pub fn print_help() {
     println!("{}", "Examples:".bold());
     println!("  list my resource groups");
     println!("  show all kubernetes clusters");
+    println!("  deploy my app to code engine");
+    println!("  deploy app named myapp to project myproject");
     println!("  exec ibmcloud target --cf");
 }
 

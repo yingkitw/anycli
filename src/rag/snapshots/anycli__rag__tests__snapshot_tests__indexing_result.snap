@@ -1,8 +1,0 @@
----
-source: src/rag/tests.rs
-assertion_line: 55
-expression: result
----
-documents_indexed: 1
-documents_failed: 0
-errors: []

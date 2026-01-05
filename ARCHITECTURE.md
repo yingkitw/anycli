@@ -2,31 +2,90 @@
 
 ## Overview
 
-AnyCLI (Cloud Universal CLI) is a modular, trait-based Rust application that translates natural language queries into cloud CLI commands using WatsonX AI and RAG (Retrieval-Augmented Generation). It provides a unified interface for multiple cloud providers including IBM Cloud, AWS, GCP, Azure, and VMware vSphere.
+AnyCLI (Cloud Universal CLI) is a Domain-Driven Design (DDD) based Rust application that translates natural language queries into cloud CLI commands using WatsonX AI and RAG (Retrieval-Augmented Generation). It provides a unified interface for multiple cloud providers including IBM Cloud, AWS, GCP, Azure, and VMware vSphere.
+
+## Architecture Pattern
+
+The application follows **Domain-Driven Design (DDD)** principles with clear separation of concerns across three layers:
+
+1. **Domain Layer**: Core business logic, entities, value objects, and domain services
+2. **Application Layer**: Use cases and application services that orchestrate domain logic
+3. **Infrastructure Layer**: External services, repository implementations, and adapters
 
 ## Rust Edition
 
 - **Edition**: 2024
 - **Compiler**: Latest stable Rust toolchain
 
-## Workspace Structure
+## Project Structure
 
-The project is organized as a Cargo workspace with multiple crates:
+The project follows DDD layering:
 
 ```
 anycli/
-├── crates/
-│   ├── anycli-core/       # Core traits and types
-│   ├── anycli-rag/        # RAG engine, vector stores, document indexers
-│   ├── anycli-cli/        # CLI interface and utilities
-│   ├── anycli-ibmcloud/   # IBM Cloud provider implementation
-│   ├── anycli-aws/        # AWS provider implementation
-│   ├── anycli-gcp/        # GCP provider implementation
-│   ├── anycli-azure/      # Azure provider implementation
-│   └── anycli-vmware/     # VMware vSphere provider implementation
-├── src/                # Main binary
-└── Cargo.toml          # Workspace configuration
+├── src/
+│   ├── domain/              # Domain Layer
+│   │   ├── entities.rs       # Domain entities (Command, CommandLearning, CloudProvider)
+│   │   ├── value_objects.rs # Value objects (QualityAnalysis, NaturalLanguageQuery)
+│   │   ├── services.rs       # Domain services (traits)
+│   │   └── repositories.rs  # Repository interfaces
+│   ├── application/          # Application Layer
+│   │   └── use_cases.rs      # Use cases (TranslateCommand, AnalyzeQuality, LearnFromCorrection)
+│   ├── infrastructure/       # Infrastructure Layer
+│   │   ├── adapters.rs       # External service adapters
+│   │   ├── repositories.rs   # Repository implementations
+│   │   └── services.rs       # Infrastructure service implementations
+│   ├── core/                 # Core traits and types (legacy, being migrated to domain)
+│   ├── cli/                  # CLI interface and utilities
+│   ├── rag/                  # RAG engine implementations
+│   ├── providers/            # Cloud provider implementations
+│   ├── watsonx_adapter.rs    # WatsonX LLM adapter
+│   └── main.rs               # Application entry point
+└── Cargo.toml
 ```
+
+### DDD Layers
+
+#### Domain Layer (`src/domain/`)
+
+**Entities**:
+- `Command`: Represents a CLI command with quality metrics
+- `CommandLearning`: Represents learned corrections from user feedback
+- `CloudProvider`: Enum for supported cloud providers
+
+**Value Objects**:
+- `QualityAnalysis`: Immutable quality assessment result
+- `NaturalLanguageQuery`: Immutable query representation
+
+**Domain Services** (traits):
+- `CommandQualityService`: Analyzes command quality
+- `CommandTranslationService`: Translates natural language to commands
+- `CommandLearningService`: Manages command learning
+
+**Repositories** (interfaces):
+- `CommandLearningRepository`: Abstract data access for learning data
+
+#### Application Layer (`src/application/`)
+
+**Use Cases**:
+- `TranslateCommandUseCase`: Orchestrates command translation
+- `AnalyzeCommandQualityUseCase`: Orchestrates quality analysis
+- `LearnFromCorrectionUseCase`: Orchestrates learning from corrections
+
+#### Infrastructure Layer (`src/infrastructure/`)
+
+**Adapters**: Bridge between domain and external services
+- WatsonX LLM adapter
+- RAG engine adapters
+- Cloud provider adapters
+
+**Repository Implementations**:
+- `FileCommandLearningRepository`: File-based learning data storage
+
+**Service Implementations**:
+- `QualityAnalyzerService`: Implements `CommandQualityService`
+- `CommandTranslatorService`: Implements `CommandTranslationService`
+- `CommandLearningServiceImpl`: Implements `CommandLearningService`
 
 ## Crate Descriptions
 
@@ -126,12 +185,19 @@ Each crate has a single, well-defined responsibility:
 - **rag**: Implements RAG components
 - **cli**: Implements user interface
 
-### 4. Test-Friendly Design
+### 4. Domain-Driven Design (DDD)
 
-- Traits enable easy mocking
-- `insta` for snapshot testing
-- Each crate has its own test suite
-- Integration tests in the main binary
+- **Domain Layer**: Pure business logic, no infrastructure dependencies
+- **Application Layer**: Use cases orchestrate domain logic
+- **Infrastructure Layer**: Implements domain interfaces, handles external concerns
+- **Dependency Inversion**: Domain defines interfaces, infrastructure implements them
+
+### 5. Test-Friendly Design
+
+- Domain logic is pure and easily testable
+- Repository interfaces enable easy mocking
+- Use cases can be tested in isolation
+- Regular assertions instead of snapshot testing
 
 ## Data Flow
 
@@ -166,8 +232,8 @@ Learning Engine (if correction needed)
 - **Serde**: Serialization/deserialization
 - **Crossterm**: Terminal UI
 - **Colored**: Terminal colors
-- **Insta**: Snapshot testing
 - **Pulldown-cmark**: Markdown parsing
+- **async-trait**: Async trait support for domain services
 
 ## Configuration
 
@@ -248,6 +314,15 @@ Provider-Specific Command
 - **Explicit**: User can specify provider with flags or commands
 - **Default**: Configurable default provider in settings
 
+## Migration to DDD
+
+The codebase is being migrated to DDD architecture:
+- ✅ Domain layer created with entities, value objects, and services
+- ✅ Application layer with use cases
+- ✅ Infrastructure layer with repository and service implementations
+- 🔄 Legacy code in `core/`, `cli/`, `rag/` is being gradually migrated
+- 📝 New features should use DDD patterns
+
 ## Future Enhancements
 
 1. **Additional LLM Providers**: OpenAI, Anthropic, etc.
@@ -258,3 +333,4 @@ Provider-Specific Command
 6. **Telemetry**: Add observability and metrics
 7. **Provider-Specific RAG**: Separate knowledge bases per cloud
 8. **Cross-Cloud Operations**: Translate commands across providers
+9. **Complete DDD Migration**: Migrate all legacy code to DDD structure

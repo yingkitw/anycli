@@ -10,14 +10,23 @@ mod rag;
 mod providers;
 mod watsonx_adapter;
 
+// DDD layers
+mod domain;
+mod application;
+mod infrastructure;
+
 use core::{LLMProvider, RAGEngine, VectorStore, CloudProviderType};
 use watsonx_adapter::create_watsonx_client;
 use rag::{LocalVectorStore, LocalDocumentIndexer, LocalRAGEngine};
 use cli::{
-    CommandTranslator, CommandLearningEngine,
+    CommandTranslator, CommandLearningEngine, IntentDetector, QueryIntent,
     display_banner, handle_input_with_history, print_help,
     confirm_execution, execute_command_with_provider, handle_learning,
 };
+use domain::code_engine::{CodeEngineDeploymentConfig, CodeEngineDeploymentService};
+use application::DeployToCodeEngineUseCase;
+use infrastructure::CodeEngineDeploymentServiceImpl;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "anycli")]
@@ -50,6 +59,41 @@ enum Commands {
     #[command(about = "Start interactive mode")]
     Interactive,
 
+    /// Deploy application to IBM Code Engine
+    #[command(about = "Deploy an application to IBM Code Engine")]
+    Deploy {
+        /// Application name
+        #[arg(short, long, default_value = "watsonx-sdlc-bun")]
+        app_name: String,
+
+        /// Project name
+        #[arg(short, long, default_value = "watsonx-sdlc-project")]
+        project_name: String,
+
+        /// Source directory path
+        #[arg(short, long, default_value = ".")]
+        source: String,
+
+        /// Region
+        #[arg(short, long, default_value = "us-south")]
+        region: String,
+
+        /// Resource group
+        #[arg(short = 'g', long, default_value = "Default")]
+        resource_group: String,
+
+        /// Port number
+        #[arg(short, long, default_value = "8000")]
+        port: u16,
+
+        /// Memory allocation (e.g., "4G")
+        #[arg(short, long, default_value = "4G")]
+        memory: String,
+
+        /// CPU allocation
+        #[arg(short, long, default_value = "1")]
+        cpu: String,
+    },
 }
 
 #[tokio::main]
@@ -101,6 +145,65 @@ async fn main() -> Result<()> {
         Some(Commands::Interactive) | None => {
             run_interactive(&translator, &mut learning_engine, default_provider).await?;
         }
+        Some(Commands::Deploy {
+            app_name,
+            project_name,
+            source,
+            region,
+            resource_group,
+            port,
+            memory,
+            cpu,
+        }) => {
+            let deployment_service = CodeEngineDeploymentServiceImpl::new();
+            let deploy_use_case = DeployToCodeEngineUseCase::new(&deployment_service);
+
+            let config = CodeEngineDeploymentConfig {
+                app_name,
+                project_name,
+                region,
+                resource_group,
+                source_path: PathBuf::from(source),
+                dockerfile_path: None,
+                env_file_path: Some(PathBuf::from(".env")),
+                secret_name: "watsonx-credentials".to_string(),
+                cpu,
+                memory,
+                min_scale: 1,
+                max_scale: 3,
+                port,
+                build_size: "large".to_string(),
+                build_timeout: 900,
+            };
+
+            println!("{} Deploying to Code Engine...", "🚀".yellow());
+            match deploy_use_case.execute(&config).await {
+                Ok(result) => {
+                    if result.success {
+                        println!("{} Deployment successful!", "✅".green());
+                        if let Some(url) = result.app_url {
+                            println!("{} Application URL: {}", "🌐".blue(), url.bold());
+                            println!();
+                            println!("{} API Endpoints:", "📡".cyan());
+                            println!("  {}/health - Health check", url);
+                            println!("  {}/api/generate - AI generation", url);
+                            println!("  {}/api/generate-tests - Test generation", url);
+                        }
+                        if let Some(build_run) = result.build_run_name {
+                            println!("{} Build run: {}", "🔨".yellow(), build_run);
+                        }
+                    } else {
+                        println!("{} Deployment failed", "❌".red());
+                        if let Some(error) = result.error {
+                            eprintln!("{}", error);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} Deployment error: {}", "❌".red(), e);
+                }
+            }
+        }
     }
 
     Ok(())
@@ -113,6 +216,8 @@ async fn run_interactive(
 ) -> Result<()> {
     display_banner();
     let mut history = Vec::new();
+    let intent_detector = IntentDetector::new();
+    let deployment_service = CodeEngineDeploymentServiceImpl::new();
 
     loop {
         let input = handle_input_with_history(&mut history).await?;
@@ -134,22 +239,99 @@ async fn run_interactive(
             continue;
         }
 
-        // Translate natural language to command
-        match translator.translate(&input).await {
-            Ok(command) => {
-                println!("{} {}", "→".green(), command.bold());
+        // Detect intent
+        let intent = intent_detector.detect(&input);
+
+        match intent {
+            QueryIntent::DeployToCodeEngine { app_name, project_name } => {
+                println!("{} Detected deployment request", "🚀".yellow());
                 
-                if confirm_execution(&command).await? {
-                    let result = execute_command_with_provider(&command, Some(default_provider)).await?;
-                    
-                    if !result.success {
-                        println!("{} Command failed", "❌".red());
-                        handle_learning(&input, &command, learning_engine).await?;
+                // Use defaults or extracted values
+                let config = CodeEngineDeploymentConfig {
+                    app_name: app_name.unwrap_or_else(|| "watsonx-sdlc-bun".to_string()),
+                    project_name: project_name.unwrap_or_else(|| "watsonx-sdlc-project".to_string()),
+                    region: "us-south".to_string(),
+                    resource_group: "Default".to_string(),
+                    source_path: PathBuf::from("."),
+                    dockerfile_path: None,
+                    env_file_path: Some(PathBuf::from(".env")),
+                    secret_name: "watsonx-credentials".to_string(),
+                    cpu: "1".to_string(),
+                    memory: "4G".to_string(),
+                    min_scale: 1,
+                    max_scale: 3,
+                    port: 8000,
+                    build_size: "large".to_string(),
+                    build_timeout: 900,
+                };
+
+                println!("{} App: {}, Project: {}", 
+                    "📦".cyan(), 
+                    config.app_name.bold(), 
+                    config.project_name.bold()
+                );
+
+                if confirm_execution("Deploy to Code Engine").await? {
+                    let deploy_use_case = DeployToCodeEngineUseCase::new(&deployment_service);
+                    match deploy_use_case.execute(&config).await {
+                        Ok(result) => {
+                            if result.success {
+                                println!("{} Deployment successful!", "✅".green());
+                                if let Some(url) = result.app_url {
+                                    println!("{} Application URL: {}", "🌐".blue(), url.bold());
+                                }
+                            } else {
+                                println!("{} Deployment failed", "❌".red());
+                                if let Some(error) = result.error {
+                                    eprintln!("{}", error);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("{} Deployment error: {}", "❌".red(), e);
+                        }
                     }
                 }
             }
-            Err(e) => {
-                println!("{} {}", "❌".red(), e);
+            QueryIntent::CommandTranslation => {
+                // Translate natural language to command
+                match translator.translate(&input).await {
+                    Ok(command) => {
+                        println!("{} {}", "→".green(), command.bold());
+                        
+                        if confirm_execution(&command).await? {
+                            let result = execute_command_with_provider(&command, Some(default_provider)).await?;
+                            
+                            if !result.success {
+                                println!("{} Command failed", "❌".red());
+                                handle_learning(&input, &command, learning_engine).await?;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("{} {}", "❌".red(), e);
+                    }
+                }
+            }
+            QueryIntent::Unknown => {
+                // Fall back to command translation
+                match translator.translate(&input).await {
+                    Ok(command) => {
+                        println!("{} {}", "→".green(), command.bold());
+                        
+                        if confirm_execution(&command).await? {
+                            let result = execute_command_with_provider(&command, Some(default_provider)).await?;
+                            
+                            if !result.success {
+                                println!("{} Command failed", "❌".red());
+                                handle_learning(&input, &command, learning_engine).await?;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("{} {}", "❌".red(), e);
+                    }
+                }
             }
         }
     }

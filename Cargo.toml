@@ -23,7 +23,7 @@ crossterm = "0.28"
 dotenvy = "0.15"
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json", "stream"] }
+reqwest = { version = "0.13", features = ["json", "stream"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -45,7 +45,7 @@ uuid = { version = "1.11", features = ["v4", "serde"] }
 scraper = "0.21"
 
 # watsonx
-watsonx-rs = "0.1.2"
+watsonx-rs = "0.1"
 
 # Utilities
 md5 = "0.7"
@@ -53,10 +53,10 @@ url = "2.5"
 chrono = { version = "0.4", features = ["serde"] }
 tempfile = "3.14"
 base64 = "0.22"
-anyrepair = "0.1.5"
+anyrepair = "0.1"
 
 # Testing
-insta = { version = "1.41", features = ["yaml", "redactions"] }
+# Removed insta - using regular assertions instead
 
 [package]
 name = "anycli"
@@ -96,4 +96,3 @@ thiserror = { workspace = true }
 pulldown-cmark = { workspace = true }
 
 [dev-dependencies]
-insta = { workspace = true }

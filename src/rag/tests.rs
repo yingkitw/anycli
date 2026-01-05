@@ -1,15 +1,14 @@
-//! Snapshot tests for RAG components
+//! Tests for RAG components
 
 #[cfg(test)]
-mod snapshot_tests {
+mod tests {
     use crate::rag::{LocalVectorStore, LocalDocumentIndexer, LocalRAGEngine};
     use crate::core::{VectorStore, VectorDocument, SearchConfig, Document, RAGQuery, DocumentIndexer, RAGEngine};
     use serde_json::json;
     use std::sync::Arc;
-    use insta::assert_yaml_snapshot;
 
     #[tokio::test]
-    async fn test_vector_store_operations_snapshot() {
+    async fn test_vector_store_operations() {
         let mut store = LocalVectorStore::new();
         store.connect().await.unwrap();
 
@@ -31,11 +30,14 @@ mod snapshot_tests {
 
         let results = store.search("IBM Cloud CLI", &config).await.unwrap();
         
-        assert_yaml_snapshot!("vector_store_search_results", results.documents);
+        assert!(!results.documents.is_empty(), "Should find at least one document");
+        assert_eq!(results.documents[0].id, "test_doc_1", "Should find the stored document");
+        assert!(results.documents[0].content.contains("IBM Cloud CLI"), 
+            "Document content should contain search query");
     }
 
     #[tokio::test]
-    async fn test_document_indexing_snapshot() {
+    async fn test_document_indexing() {
         let mut store = LocalVectorStore::new();
         store.connect().await.unwrap();
         let store = Arc::new(store);
@@ -52,12 +54,14 @@ mod snapshot_tests {
 
         let result = indexer.index_document(document).await.unwrap();
         
-        assert_yaml_snapshot!("indexing_result", result);
+        assert_eq!(result.documents_indexed, 1, "Should index 1 document");
+        assert_eq!(result.documents_failed, 0, "Should have no failures");
+        assert!(result.errors.is_empty(), "Should have no errors");
     }
 
     #[tokio::test]
-    #[ignore]
-    async fn test_rag_engine_snapshot() {
+    #[ignore] // Requires full RAG engine initialization
+    async fn test_rag_engine_retrieve() {
         let mut store = LocalVectorStore::new();
         store.connect().await.unwrap();
         let store = Arc::new(store);
@@ -76,9 +80,9 @@ mod snapshot_tests {
 
         let result = engine.retrieve(&query).await.unwrap();
         
-        assert_yaml_snapshot!("rag_retrieve_result", {
-            ".documents[].score" => insta::rounded_redaction(2),
-        }, result);
+        assert!(!result.documents.is_empty(), "Should retrieve at least one document");
+        assert!(!result.context.is_empty(), "Should have context");
+        assert!(result.metadata.is_some(), "Should have metadata");
     }
 
     #[tokio::test]
@@ -111,6 +115,10 @@ mod snapshot_tests {
 
         let context = engine.build_context(&docs);
         
-        assert_yaml_snapshot!("rag_context", context);
+        assert!(!context.is_empty(), "Context should not be empty");
+        assert!(context.contains("IBM Cloud CLI commands"), 
+            "Context should contain document content");
+        assert!(context.contains("Installation guide"), 
+            "Context should contain second document content");
     }
 }

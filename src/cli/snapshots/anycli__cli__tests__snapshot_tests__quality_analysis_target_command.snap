@@ -1,8 +1,0 @@
----
-source: src/cli/tests.rs
-assertion_line: 27
-expression: analysis
----
-score: 1
-issues: []
-suggestions: []

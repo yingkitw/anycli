@@ -39,8 +39,25 @@ impl<L: LLMProvider, R: RAGEngine> CommandTranslator<L, R> {
     /// Build the prompt with optional RAG context
     async fn build_prompt(&self, query: &str) -> Result<String> {
         let base_prompt = format!(
-            "You are an IBM Cloud CLI expert. Translate the following natural language query into a valid IBM Cloud CLI command.\n\
-            Only output the command itself, nothing else.\n\
+            "You are a cloud CLI expert supporting IBM Cloud, AWS, GCP, Azure, and VMware. Translate the following natural language query into a valid cloud CLI command.\n\
+            \n\
+            IMPORTANT RULES:\n\
+            1. Only output the command itself, nothing else - no explanations, no markdown, just the command\n\
+            2. For IBM Cloud commands, use 'ibmcloud' prefix\n\
+            3. For AWS commands, use 'aws' prefix\n\
+            4. For GCP commands, use 'gcloud' prefix\n\
+            5. For Azure commands, use 'az' prefix\n\
+            6. For VMware commands, use 'govc' prefix\n\
+            7. Be specific and include necessary flags and options\n\
+            8. Use proper command syntax for each provider\n\
+            9. For list operations, include appropriate filters if mentioned\n\
+            10. For resource creation, include required parameters\n\
+            \n\
+            EXAMPLES:\n\
+            - \"list my resource groups\" → ibmcloud resource groups\n\
+            - \"show all ec2 instances\" → aws ec2 describe-instances\n\
+            - \"list compute instances\" → gcloud compute instances list\n\
+            - \"show my databases\" → ibmcloud resource service-instances --service-name databases\n\
             \n\
             Query: {}\n\
             Command:",

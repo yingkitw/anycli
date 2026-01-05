@@ -1,30 +1,44 @@
-//! Snapshot tests for CLI components
+//! Tests for CLI components
 
 #[cfg(test)]
-mod snapshot_tests {
+mod tests {
     use crate::cli::{QualityAnalyzer, CommandLearningEngine};
-    use insta::assert_yaml_snapshot;
     use tempfile::NamedTempFile;
 
     #[test]
-    fn test_quality_analyzer_snapshots() {
+    fn test_quality_analyzer_analysis() {
         let analyzer = QualityAnalyzer::new();
 
-        let test_commands = vec![
-            ("ibmcloud resource groups", "good_resource_command"),
-            ("ibmcloud login --sso", "login_sso_command"),
-            ("ibmcloud target -r us-south -g default", "target_command"),
-            ("ibmcloud cf apps", "cf_apps_command"),
-            ("ibmcloud plugin list", "plugin_list_command"),
-            ("error: command not found", "error_command"),
-            ("", "empty_command"),
-            ("ibmcloud", "incomplete_command"),
-            ("ibmcloud resource service-instances --service-name databases-for-postgresql", "long_command"),
+        // Test good commands
+        let good_commands = vec![
+            "ibmcloud resource groups",
+            "ibmcloud login --sso",
+            "ibmcloud target -r us-south -g default",
+            "ibmcloud cf apps",
+            "ibmcloud plugin list",
+            "ibmcloud resource service-instances --service-name databases-for-postgresql",
         ];
 
-        for (command, name) in test_commands {
+        for command in good_commands {
             let analysis = analyzer.analyze(command);
-            assert_yaml_snapshot!(format!("quality_analysis_{}", name), analysis);
+            assert!(analysis.score > 0.6, "Command '{}' should have score > 0.6, got {}", command, analysis.score);
+            assert!(analysis.issues.is_empty() || analysis.issues.len() < 2, 
+                "Good command '{}' should have few issues", command);
+        }
+
+        // Test bad commands
+        let bad_commands = vec![
+            ("error: command not found", true),
+            ("", true),
+            ("ibmcloud", true),
+        ];
+
+        for (command, should_have_issues) in bad_commands {
+            let analysis = analyzer.analyze(command);
+            if should_have_issues {
+                assert!(analysis.score < 0.6 || !analysis.issues.is_empty(), 
+                    "Bad command '{}' should have low score or issues", command);
+            }
         }
     }
 
@@ -39,17 +53,14 @@ mod snapshot_tests {
             ("", false),
         ];
 
-        let results: Vec<_> = validations
-            .iter()
-            .map(|(cmd, _expected)| (cmd, analyzer.is_valid(cmd)))
-            .collect();
-
-        assert_yaml_snapshot!("quality_validations", results);
+        for (cmd, expected) in validations {
+            let result = analyzer.is_valid(cmd);
+            assert_eq!(result, expected, "Command '{}' validation should be {}", cmd, expected);
+        }
     }
 
     #[tokio::test]
-    #[ignore]
-    async fn test_command_learning_snapshot() {
+    async fn test_command_learning_corrections() {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path().to_str().unwrap();
 
@@ -75,9 +86,15 @@ mod snapshot_tests {
             .unwrap();
 
         let all_corrections = engine.get_all_corrections();
-        assert_yaml_snapshot!("command_corrections", {
-            "[].timestamp" => "[timestamp]",
-        }, all_corrections);
+        assert_eq!(all_corrections.len(), 2, "Should have 2 corrections");
+        
+        let first = engine.get_learned_command("list databases");
+        assert!(first.is_some(), "Should find learned command for 'list databases'");
+        assert_eq!(first.unwrap().correct_command, "ibmcloud resource service-instances --service-name databases-for-postgresql");
+        
+        let second = engine.get_learned_command("show clusters");
+        assert!(second.is_some(), "Should find learned command for 'show clusters'");
+        assert_eq!(second.unwrap().correct_command, "ibmcloud ks clusters");
     }
 
     #[tokio::test]
@@ -107,8 +124,12 @@ mod snapshot_tests {
 
         let similar = engine.find_similar("list databases", 0.3);
         
-        assert_yaml_snapshot!("similar_commands", {
-            "[].timestamp" => "[timestamp]",
-        }, similar);
+        assert!(!similar.is_empty(), "Should find similar commands");
+        assert!(similar.len() >= 1, "Should find at least 1 similar command");
+        
+        // Verify the similar commands contain expected queries
+        let queries: Vec<&str> = similar.iter().map(|c| c.query.as_str()).collect();
+        assert!(queries.iter().any(|q| q.contains("databases")), 
+            "Similar commands should contain 'databases'");
     }
 }

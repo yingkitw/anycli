@@ -61,6 +61,21 @@ impl<V: VectorStore, D: DocumentIndexer> LocalRAGEngine<V, D> {
                 "IBM Cloud CLI Output Formats",
                 "output_formatting"
             ),
+            (
+                "IBM Code Engine is a fully managed serverless platform for running containers. To deploy an application: 1) Install Code Engine plugin: 'ibmcloud plugin install code-engine', 2) Select project: 'ibmcloud ce project select --name <project>', 3) Create/update application: 'ibmcloud ce application create/update --name <app> --build-source . --strategy dockerfile'. Code Engine supports remote builds - no local Docker required.",
+                "IBM Code Engine Deployment",
+                "code_engine"
+            ),
+            (
+                "Code Engine applications can be deployed with: --cpu (1, 2, 4), --memory (1G, 2G, 4G), --min-scale and --max-scale for autoscaling, --port for the application port, --env-from-secret to use secrets, and --build-size (small, medium, large, xlarge) for build resources.",
+                "Code Engine Application Configuration",
+                "code_engine"
+            ),
+            (
+                "To deploy to Code Engine: 'ibmcloud ce application create --name <app-name> --build-source . --strategy dockerfile --build-size large --env-from-secret <secret-name> --cpu 1 --memory 4G --min-scale 1 --max-scale 3 --port 8000 --wait'. The --wait flag waits for deployment to complete.",
+                "Code Engine Deployment Command",
+                "code_engine"
+            ),
         ];
 
         let documents: Vec<Document> = basic_knowledge
